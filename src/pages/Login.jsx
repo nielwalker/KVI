@@ -128,7 +128,7 @@ function Login() {
             <p className="text-gray-400">
               Don't have an account?{' '}
               <Link to="/register" className="text-red-500 hover:text-red-400 font-medium transition-colors">
-                Register here
+                Register Here
               </Link>
             </p>
           </div>
