@@ -83,7 +83,7 @@ function Members() {
       {showSearch && (
         <div className="bg-white rounded-xl shadow-md p-4 mb-4">
           <div className="relative">
-            <Search className="absolute-1/2 -translate-y- left-3 top1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Search members by name or email..."
