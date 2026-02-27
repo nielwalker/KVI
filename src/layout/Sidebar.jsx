@@ -111,8 +111,12 @@ function Sidebar({ isOpen, toggleSidebar }) {
           {isOpen ? (
             <>
               <div className="flex items-center gap-3 mb-4 px-2">
-                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">
-                  <User size={20} className="text-white" />
+                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={user?.profileImage || '/image-removebg-preview.png'}
+                    alt={user?.name || 'User'}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-white truncate">{user?.name || 'Guest'}</p>

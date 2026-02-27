@@ -3,11 +3,24 @@ import { createContext, useContext, useState, useEffect } from 'react'
 
 const AuthContext = createContext(null)
 
+const createProfileImageUrl = (name) => {
+  const encodedName = encodeURIComponent(name || 'Volunteer')
+  return `https://ui-avatars.com/api/?name=${encodedName}&background=dc2626&color=ffffff&bold=true`
+}
+
+const enrichUserWithProfileImage = (user) => {
+  if (user?.profileImage) return user
+  return {
+    ...user,
+    profileImage: createProfileImageUrl(user?.name),
+  }
+}
+
 // Dummy accounts stored in localStorage
 const getStoredUsers = () => {
   const stored = localStorage.getItem('kusgan_users')
   if (stored) {
-    return JSON.parse(stored)
+    return JSON.parse(stored).map(enrichUserWithProfileImage)
   }
   // Default dummy accounts
   return [
@@ -52,7 +65,45 @@ const getStoredUsers = () => {
 
 const getStoredCurrentUser = () => {
   const stored = localStorage.getItem('kusgan_current_user')
-  return stored ? JSON.parse(stored) : null
+  return stored ? enrichUserWithProfileImage(JSON.parse(stored)) : null
+}
+
+const getTodayDateKey = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const recordDailyPresence = (loggedInUser) => {
+  const activityKey = 'kusgan_login_activity'
+  const stored = localStorage.getItem(activityKey)
+  const activity = stored ? JSON.parse(stored) : []
+  const todayKey = getTodayDateKey()
+  const timestamp = new Date().toISOString()
+
+  const existingIndex = activity.findIndex(
+    (entry) => entry.date === todayKey && entry.userId === loggedInUser.id
+  )
+
+  const payload = {
+    date: todayKey,
+    userId: loggedInUser.id,
+    name: loggedInUser.name,
+    email: loggedInUser.email,
+    role: loggedInUser.role,
+    profileImage: loggedInUser.profileImage,
+    lastLoginAt: timestamp,
+  }
+
+  if (existingIndex >= 0) {
+    activity[existingIndex] = payload
+  } else {
+    activity.push(payload)
+  }
+
+  localStorage.setItem(activityKey, JSON.stringify(activity))
 }
 
 export function AuthProvider({ children }) {
@@ -87,6 +138,7 @@ export function AuthProvider({ children }) {
     if (foundUser) {
       const { password: _, ...userWithoutPassword } = foundUser
       setUser(userWithoutPassword)
+      recordDailyPresence(userWithoutPassword)
       return { success: true, user: userWithoutPassword }
     }
     return { success: false, message: 'Invalid email or password' }
@@ -105,10 +157,12 @@ export function AuthProvider({ children }) {
       role: 'member',
       canCreateAnnouncement: false,
       canCreatePlan: false,
+      profileImage: createProfileImageUrl(name),
     }
     setUsers([...users, newUser])
     const { password: _, ...userWithoutPassword } = newUser
     setUser(userWithoutPassword)
+    recordDailyPresence(userWithoutPassword)
     return { success: true, user: userWithoutPassword }
   }
 

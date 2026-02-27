@@ -103,7 +103,7 @@ function Members() {
       {showSearch && (
         <div className="bg-white rounded-xl shadow-md p-4 mb-4">
           <div className="relative">
-            <Search className="absolute-1/2 -translate-y- left-3 top1/2 text-gray-400" size={18} />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"
               placeholder="Search members by name or email..."
@@ -163,10 +163,12 @@ function Members() {
                 onClick={() => isAdmin && handleViewMember(member.id)}
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">
-                      {member.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={member.profileImage || '/image-removebg-preview.png'}
+                      alt={member.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-800 text-lg truncate">{member.name}</h3>
