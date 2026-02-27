@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Mail, Shield, Edit2, Save, X } from 'lucide-react'
+import { Mail, Shield, Edit2, Save, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 function Profile() {
@@ -28,8 +28,12 @@ function Profile() {
         {/* Cover */}
         <div className="h-32 bg-gradient-to-r from-gray-900 to-black relative">
           <div className="absolute -bottom-12 left-6">
-            <div className="w-24 h-24 bg-white rounded-2xl shadow-lg flex items-center justify-center">
-              <User size={48} className="text-red-600" />
+            <div className="w-24 h-24 bg-white rounded-2xl shadow-lg flex items-center justify-center overflow-hidden">
+              <img
+                src={user?.profileImage || '/image-removebg-preview.png'}
+                alt={user?.name || 'User'}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>

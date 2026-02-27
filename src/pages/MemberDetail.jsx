@@ -67,10 +67,12 @@ function MemberDetail() {
       <div className="space-y-6">
         <div className="bg-white rounded-xl shadow-md p-6">
           <div className="flex items-start gap-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-3xl">
-                {member.name.charAt(0).toUpperCase()}
-              </span>
+            <div className="w-24 h-24 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              <img
+                src={member.profileImage || '/image-removebg-preview.png'}
+                alt={member.name}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-2 flex-wrap">

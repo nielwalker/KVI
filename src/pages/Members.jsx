@@ -153,10 +153,12 @@ function Members() {
                 onClick={() => isAdmin && handleViewMember(member.id)}
               >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">
-                      {member.name.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-red-600 to-red-700 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={member.profileImage || '/image-removebg-preview.png'}
+                      alt={member.name}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-800 text-lg truncate">{member.name}</h3>
