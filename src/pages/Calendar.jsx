@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Calendar as CalendarIcon, ChevronLeft, Clock, User, Bell, Plus } from 'lucide-react'
+import { Calendar as CalendarIcon, ChevronLeft, Clock, User, Bell, Plus, Mail, X } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useAuth } from '../context/AuthContext'
 
@@ -17,10 +17,19 @@ const getStoredAnnouncements = () => {
 
 function Calendar() {
   const { user } = useAuth()
-  const [events] = useState(getStoredEvents)
+  const [events, setEvents] = useState(getStoredEvents)
   const [announcements] = useState(getStoredAnnouncements)
   const [selectedMonthKey, setSelectedMonthKey] = useState(null)
   const [expandedItemId, setExpandedItemId] = useState(null)
+  const [showAddEvent, setShowAddEvent] = useState(false)
+  const [newEvent, setNewEvent] = useState({
+    title: '',
+    description: '',
+    date: dayjs().format('YYYY-MM-DD'),
+    startTime: '',
+    endTime: '',
+    email: user?.email || '',
+  })
 
   const visibleAnnouncements = useMemo(() => {
     return announcements.filter(a => {
@@ -39,6 +48,7 @@ function Calendar() {
         startTime: event.startTime,
         endTime: event.endTime,
         createdBy: event.createdBy,
+        email: event.email,
       })),
       ...visibleAnnouncements.map(announcement => ({
         id: `announcement-${announcement.id}`,
@@ -79,6 +89,36 @@ function Calendar() {
     setExpandedItemId(prev => (prev === itemId ? null : itemId))
   }
 
+  const handleAddEvent = (e) => {
+    e.preventDefault()
+    if (!newEvent.title || !newEvent.date) return
+
+    const eventToAdd = {
+      id: Date.now(),
+      title: newEvent.title,
+      description: newEvent.description,
+      date: newEvent.date,
+      startTime: newEvent.startTime,
+      endTime: newEvent.endTime,
+      createdBy: user?.name || 'Unknown creator',
+      email: newEvent.email,
+    }
+
+    const updatedEvents = [eventToAdd, ...events]
+    setEvents(updatedEvents)
+    localStorage.setItem('kusgan_events', JSON.stringify(updatedEvents))
+
+    setNewEvent({
+      title: '',
+      description: '',
+      date: dayjs().format('YYYY-MM-DD'),
+      startTime: '',
+      endTime: '',
+      email: user?.email || '',
+    })
+    setShowAddEvent(false)
+  }
+
   const getItemTimeLabel = (item) => {
     if (item.type === 'plan') {
       if (item.startTime || item.endTime) {
@@ -107,6 +147,7 @@ function Calendar() {
         </div>
         <button
           type="button"
+          onClick={() => setShowAddEvent(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-lg"
         >
           <Plus size={18} />
@@ -231,6 +272,12 @@ function Calendar() {
                             <User size={14} />
                             <span>{item.createdBy || 'Unknown creator'}</span>
                           </div>
+                          {item.email && (
+                            <div className="flex items-center gap-2 text-gray-600">
+                              <Mail size={14} />
+                              <span>{item.email}</span>
+                            </div>
+                          )}
                         </>
                       )}
 
@@ -264,6 +311,108 @@ function Calendar() {
             {selectedMonth.items.length === 0 && (
               <p className="text-gray-500 text-center py-4">No events in this Month.</p>
             )}
+          </div>
+        </div>
+      )}
+
+      {showAddEvent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Add Event</h3>
+              <button
+                type="button"
+                onClick={() => setShowAddEvent(false)}
+                className="p-1 rounded hover:bg-gray-100 text-gray-500"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddEvent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input
+                  type="text"
+                  required
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Event title"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={newEvent.description}
+                  onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  rows={3}
+                  placeholder="Event description"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={newEvent.date}
+                    onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={newEvent.email}
+                    onChange={(e) => setNewEvent({ ...newEvent, email: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                    placeholder="name@example.com"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                  <input
+                    type="time"
+                    value={newEvent.startTime}
+                    onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                  <input
+                    type="time"
+                    value={newEvent.endTime}
+                    onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddEvent(false)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Save Event
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

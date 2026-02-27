@@ -19,6 +19,9 @@ const getStoredUsers = () => {
       role: 'admin',
       canCreateAnnouncement: true,
       canCreatePlan: true,
+      address: '',
+      status: 'active',
+      memberSince: new Date().toISOString(),
     },
     {
       id: 2,
@@ -28,6 +31,9 @@ const getStoredUsers = () => {
       role: 'member',
       canCreateAnnouncement: false,
       canCreatePlan: false,
+      address: '',
+      status: 'active',
+      memberSince: new Date().toISOString(),
     },
     {
       id: 3,
@@ -37,6 +43,9 @@ const getStoredUsers = () => {
       role: 'member',
       canCreateAnnouncement: false,
       canCreatePlan: false,
+      address: '',
+      status: 'active',
+      memberSince: new Date().toISOString(),
     },
   ]
 }
@@ -125,6 +134,51 @@ export function AuthProvider({ children }) {
     return users.map(({ password, ...u }) => u)
   }
 
+  const addUser = (userData) => {
+    const resolvedId = userData.id !== undefined && userData.id !== null && String(userData.id).trim() !== ''
+      ? userData.id
+      : Date.now()
+
+    const newUser = {
+      id: resolvedId,
+      name: userData.name,
+      email: userData.email || '',
+      password: userData.password || '',
+      role: 'member',
+      canCreateAnnouncement: false,
+      canCreatePlan: false,
+      address: userData.address || '',
+      status: userData.status || 'active',
+      memberSince: userData.memberSince || new Date().toISOString(),
+    }
+    setUsers([...users, newUser])
+    return { success: true, user: newUser }
+  }
+
+  const deleteMembers = (memberIds) => {
+    const idSet = new Set(memberIds.map(id => String(id)))
+    const updatedUsers = users.filter(u => !idSet.has(String(u.id)))
+    setUsers(updatedUsers)
+
+    if (user && idSet.has(String(user.id))) {
+      setUser(null)
+    }
+  }
+
+  const updateMember = (memberId, updates) => {
+    const updatedUsers = users.map(u => {
+      if (String(u.id) === String(memberId)) {
+        return { ...u, ...updates }
+      }
+      return u
+    })
+    setUsers(updatedUsers)
+
+    if (user && String(user.id) === String(memberId)) {
+      setUser(prev => ({ ...prev, ...updates }))
+    }
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -134,6 +188,9 @@ export function AuthProvider({ children }) {
       loading,
       updateMemberPermission,
       getAllMembers,
+      addUser,
+      deleteMembers,
+      updateMember,
       users: users.map(({ password, ...u }) => u)
     }}>
       {children}
