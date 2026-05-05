@@ -14,7 +14,6 @@ const createDefaultSettings = (name = '') => ({
   },
   notifications: {
     email: true,
-    sms: false,
     inApp: true,
   },
   preferences: {
@@ -182,17 +181,6 @@ function Settings() {
               }}
               label={t('Email Notifications')}
               description={t('Receive event and assignment updates by email.')}
-            />
-            <ToggleSwitch
-              checked={settings.notifications.sms}
-              onChange={() => {
-                setOverrides(prev => ({
-                  ...prev,
-                  notifications: { ...(prev.notifications || {}), sms: !settings.notifications.sms },
-                }))
-              }}
-              label={t('SMS Notifications')}
-              description={t('Get urgent updates by text message.')}
             />
             <ToggleSwitch
               checked={settings.notifications.inApp}

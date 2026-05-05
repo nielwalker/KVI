@@ -40,7 +40,6 @@ import {
   updateSupabaseEvent,
 } from '../lib/supabaseEvents'
 import { insertAssignmentNotifications } from '../lib/supabaseNotifications'
-import { sendAssignmentSms } from '../lib/sms'
 import { buildActivityValueRow } from '../lib/activityValues'
 
 const CATEGORY_CONFIG = {
@@ -423,6 +422,7 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
   const leafletRef = useRef(null)
   const addressRef = useRef(address)
   const onLocationSelectRef = useRef(onLocationSelect)
+  const initialLocationRef = useRef(location)
 
   useEffect(() => {
     addressRef.current = address
@@ -441,10 +441,11 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
         if (!active || !L || !mapContainerRef.current || mapRef.current) return
 	        leafletRef.current = L
 	
-	        const defaultCenter = location || { lat: 12.8797, lng: 121.774 }
+	        const initialLocation = initialLocationRef.current
+	        const defaultCenter = initialLocation || { lat: 12.8797, lng: 121.774 }
 	        const map = L.map(mapContainerRef.current, {
 	          center: [defaultCenter.lat, defaultCenter.lng],
-	          zoom: location ? 15 : 6,
+	          zoom: initialLocation ? 15 : 6,
 	        })
 
         map.getContainer().style.zIndex = '0'
@@ -454,8 +455,8 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
           maxZoom: 19,
         }).addTo(map)
 
-        if (location) {
-          markerRef.current = L.marker([location.lat, location.lng]).addTo(map)
+        if (initialLocation) {
+          markerRef.current = L.marker([initialLocation.lat, initialLocation.lng]).addTo(map)
         }
 
         map.on('click', async e => {
@@ -1458,25 +1459,7 @@ function Calendar({ listOnly = false }) {
       assignedBy: user?.name || 'Admin',
     })
 
-    // Optional: send SMS alerts for new assignments (server-side, controlled via env vars).
-    try {
-      const result = await sendAssignmentSms({
-        memberIds: newlyAssigned,
-        category: event?.category || '',
-        dateTime: event?.dateTime || '',
-        location: event?.address || event?.location?.address || '',
-      })
-      if (result && result.ok === false) {
-        console.warn('Assignment SMS failed.', result)
-        toast.push({
-          type: 'error',
-          title: 'SMS Failed',
-          message: result.error || 'Failed to send assignment SMS.',
-        })
-      }
-    } catch {
-      // ignore SMS failures (notifications still stored in-app)
-    }
+    // Assignment notifications are stored in-app only.
   }
 
   const currentUserId = String(user?.id || '')
