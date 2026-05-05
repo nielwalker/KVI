@@ -1,4 +1,5 @@
 /* global process */
+/* global Buffer */
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -67,12 +68,43 @@ export default async function handler(req, res) {
 
   const { data: authData, error: authError } = await supabase.auth.getUser(token)
   if (authError || !authData?.user?.id) {
+    // Helpful diagnostics without leaking secrets.
+    const tokenParts = String(token || '').split('.')
+    const isJwtLike = tokenParts.length === 3
+    let jwtClaims = null
+    try {
+      if (isJwtLike) {
+        const payload = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const jsonStr = Buffer.from(payload, 'base64').toString('utf8')
+        const decoded = JSON.parse(jsonStr)
+        jwtClaims = {
+          aud: decoded?.aud,
+          iss: decoded?.iss,
+          exp: decoded?.exp,
+          sub: decoded?.sub,
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     return json(res, 401, {
       ok: false,
       error: 'Invalid auth token',
       details: authError?.message || null,
       hint:
-        'Ensure Vercel env vars SUPABASE_SERVICE_ROLE_KEY and (VITE_SUPABASE_URL or SUPABASE_URL) are from the same Supabase project as the client VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY.',
+        'This usually means your Vercel SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_URL do not match the Supabase project that issued the JWT, or the token is expired.',
+      debug: {
+        supabaseUrlHost: (() => {
+          try {
+            return new URL(supabaseUrl).host
+          } catch {
+            return null
+          }
+        })(),
+        jwt: jwtClaims,
+        tokenJwtLike: isJwtLike,
+      },
     })
   }
 
