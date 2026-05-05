@@ -58,26 +58,40 @@ export default async function handler(req, res) {
   const serviceRoleKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()
   if (!supabaseUrl || !serviceRoleKey) return json(res, 500, { ok: false, error: 'Supabase env not configured' })
 
+  const supabaseAnonKey = String(process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '').trim()
+  if (!supabaseAnonKey) {
+    return json(res, 500, {
+      ok: false,
+      error: 'Supabase env not configured',
+      details: 'Missing VITE_SUPABASE_ANON_KEY (public key).',
+    })
+  }
+
   const smsApiKey = String(process.env.SMS_API_KEY || '').trim()
   if (!smsApiKey) return json(res, 500, { ok: false, error: 'SMS provider env not configured' })
 
   const token = getBearerToken(req) || getFallbackBearerToken(req)
   if (!token) return json(res, 401, { ok: false, error: 'Missing auth token' })
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  })
 
-  const { data: authData, error: authError } = await supabase.auth.getUser(token)
-  if (authError || !authData?.user?.id) {
-    // Helpful diagnostics without leaking secrets.
+  // Verify JWT without relying on auth.sessions (avoids "Auth session missing!" issues).
+  const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  })
+
+  const verifyJwtClaims = async () => {
     const tokenParts = String(token || '').split('.')
     const isJwtLike = tokenParts.length === 3
-    let jwtClaims = null
+    let decodedClaims = null
     try {
       if (isJwtLike) {
         const payload = tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')
         const jsonStr = Buffer.from(payload, 'base64').toString('utf8')
         const decoded = JSON.parse(jsonStr)
-        jwtClaims = {
+        decodedClaims = {
           aud: decoded?.aud,
           iss: decoded?.iss,
           exp: decoded?.exp,
@@ -88,12 +102,33 @@ export default async function handler(req, res) {
       // ignore
     }
 
+    // Prefer getClaims() if available; falls back to getUser() otherwise.
+    try {
+      if (typeof supabaseAuth.auth.getClaims === 'function') {
+        const { data, error } = await supabaseAuth.auth.getClaims(token)
+        if (error) return { ok: false, error, decodedClaims }
+        return { ok: true, claims: data?.claims || null, decodedClaims }
+      }
+    } catch (error) {
+      // ignore and fall back
+      return { ok: false, error, decodedClaims, mode: 'getClaims' }
+    }
+
+    const { data, error } = await supabaseAuth.auth.getUser(token)
+    if (error || !data?.user?.id) return { ok: false, error, decodedClaims }
+    return { ok: true, claims: { sub: data.user.id }, decodedClaims }
+  }
+
+  const verified = await verifyJwtClaims()
+  const claims = verified?.claims || verified?.decodedClaims || null
+  const requesterId = String(claims?.sub || '').trim()
+  if (!requesterId) {
     return json(res, 401, {
       ok: false,
       error: 'Invalid auth token',
-      details: authError?.message || null,
+      details: verified?.error?.message || null,
       hint:
-        'This usually means your Vercel SUPABASE_SERVICE_ROLE_KEY / VITE_SUPABASE_URL do not match the Supabase project that issued the JWT, or the token is expired.',
+        'JWT verification failed. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY match the project that issued the token.',
       debug: {
         supabaseUrlHost: (() => {
           try {
@@ -102,14 +137,12 @@ export default async function handler(req, res) {
             return null
           }
         })(),
-        jwt: jwtClaims,
-        tokenJwtLike: isJwtLike,
+        jwt: verified?.decodedClaims || null,
+        verifyMode: typeof supabaseAuth.auth.getClaims === 'function' ? 'getClaims' : 'getUser',
       },
     })
   }
-
-  const requesterId = authData.user.id
-  const { data: requesterProfile, error: requesterProfileError } = await supabase
+  const { data: requesterProfile, error: requesterProfileError } = await supabaseAdmin
     .from('profiles')
     .select('role')
     .eq('id', requesterId)
@@ -129,7 +162,7 @@ export default async function handler(req, res) {
     location: body?.location,
   })
 
-  const { data: recipients, error: recipientError } = await supabase
+  const { data: recipients, error: recipientError } = await supabaseAdmin
     .from('profiles')
     .select('id,contact_number')
     .in('id', memberIds)
