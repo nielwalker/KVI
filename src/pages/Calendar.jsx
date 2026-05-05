@@ -3197,7 +3197,8 @@ function matchesStatusFilter(item, selectedStatusFilter) {
   if (listOnly) {
     return (
       <div className="relative isolate animate-fade-in rounded-[30px] p-3 sm:p-4">
-        <div className="fixed inset-0 -z-10 bg-[#4169E1]" />
+        <div className="fixed inset-0 z-0 bg-[#4169E1] pointer-events-none" aria-hidden="true" />
+        <div className="relative z-10">
         <div className="mx-auto max-w-7xl rounded-[26px] bg-[#4169E1] p-1.5 2xl:max-w-[1500px]">
         <div className="relative mb-6 overflow-hidden rounded-2xl border border-white/10 bg-[#4169E1] p-6 shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-md sm:p-7">
           <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-yellow-400/15 blur-3xl" />
@@ -3312,6 +3313,7 @@ function matchesStatusFilter(item, selectedStatusFilter) {
         </div>
         </div>
         {renderSharedOverlays()}
+        </div>
       </div>
     )
   }

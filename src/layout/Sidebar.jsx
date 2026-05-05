@@ -22,7 +22,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
   const userDividerTone = 'border-t border-white/10'
   const userNameTone = 'text-white'
   const sidebarAccentTone = 'bg-yellow-400 text-slate-900 hover:bg-yellow-300'
-  const avatarTone = 'bg-white ring-2 ring-yellow-400/30'
+  const avatarTone = 'bg-white logo-no-dark ring-2 ring-yellow-400/30'
   const footerBorderTone = 'border-l border-white/10'
   const footerButtonBorderTone = 'border-white/15'
   const managementRoutes = ['/members', '/achievements', '/category-management', '/committee-management']
