@@ -423,8 +423,9 @@ function Attendance() {
   }
 
   return (
-    <div className="relative isolate animate-fade-in space-y-6 text-white">
-      <div className="fixed inset-0 -z-10 bg-[#4169E1]" />
+    <div className="relative isolate animate-fade-in text-white">
+      <div className="fixed inset-0 z-0 bg-[#4169E1] pointer-events-none" aria-hidden="true" />
+      <div className="relative z-10 space-y-6">
       <section className="rounded-2xl border border-white/10 bg-[#4169E1]/80 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-md">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
@@ -604,6 +605,7 @@ function Attendance() {
           </div>
         </article>
       </section>
+      </div>
     </div>
   )
 }

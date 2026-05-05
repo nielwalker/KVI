@@ -149,11 +149,11 @@ const PROGRAM_SLIDES = {
     '/Programs/fire_response04.jpg',
   ],
   medical: [
-    '/Programs/medical.png',
-    '/Programs/medical01.JPG',
-    '/Programs/medical02.JPG',
-    '/Programs/medical03.png',
-    '/Programs/medical04.png',
+    '/Programs/medical.jpg',
+    '/Programs/medical01_opt.jpg',
+    '/Programs/medical02_opt.jpg',
+    '/Programs/medical03.jpg',
+    '/Programs/medical04.jpg',
   ],
 }
 
