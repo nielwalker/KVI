@@ -686,7 +686,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
       },
       donations: { eventCount: 0 },
       environmental: { eventCount: 0, envTreesPlanted: 0 },
-      relief_operation: { eventCount: 0, reliefFamiliesCount: 0, reliefItems: { grocery: 0, hygiene_kit: 0, both: 0 } },
+      relief_operation: { eventCount: 0, reliefFamiliesCount: 0, reliefItems: { grocery: 0, hygiene_kit: 0, both: 0, water: 0 } },
       fire_response: { eventCount: 0, fireAffectedFamilies: 0, fireEstimatedCost: 0, fireLiters: 0 },
       water_distribution: { eventCount: 0, waterLiters: 0, waterHouseholds: 0 },
       notes: { trainings: 0, monthlyTrainingCount: {}, monthlyEventCount: {} },
@@ -727,7 +727,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
       if (category === 'relief_operation') {
         template.relief_operation.eventCount += 1
         template.relief_operation.reliefFamiliesCount += toNumber(getFieldValue(event, 'relief_families_count'))
-        const items = String(getFieldValue(event, 'relief_items')).trim().toLowerCase()
+        const items = String(getFieldValue(event, 'relief_items', ['relief_type'])).trim().toLowerCase()
         if (items && template.relief_operation.reliefItems[items] !== undefined) {
           template.relief_operation.reliefItems[items] += 1
         }
@@ -875,6 +875,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
     `Relief Items Grocery: ${stats.relief_operation.reliefItems.grocery}`,
     `Relief Items Hygiene Kit: ${stats.relief_operation.reliefItems.hygiene_kit}`,
     `Relief Items Both: ${stats.relief_operation.reliefItems.both}`,
+    `Relief Items Water: ${stats.relief_operation.reliefItems.water}`,
     `Total Fire Responses: ${stats.fire_response.eventCount}`,
     `Total Affected Families: ${stats.fire_response.fireAffectedFamilies}`,
     `Total Estimated Cost: ${stats.fire_response.fireEstimatedCost}`,
@@ -1241,6 +1242,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
 		              <div className="flex flex-wrap justify-between gap-2"><span>Items: Grocery</span><strong>{stats.relief_operation.reliefItems.grocery}</strong></div>
 		              <div className="flex flex-wrap justify-between gap-2"><span>Items: Hygiene Kit</span><strong>{stats.relief_operation.reliefItems.hygiene_kit}</strong></div>
 		              <div className="flex flex-wrap justify-between gap-2"><span>Items: Both</span><strong>{stats.relief_operation.reliefItems.both}</strong></div>
+		              <div className="flex flex-wrap justify-between gap-2"><span>Items: Water</span><strong>{stats.relief_operation.reliefItems.water}</strong></div>
 		              {renderTypedTotals('relief_operation')}
 		            </div>
 		          </div>

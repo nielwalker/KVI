@@ -200,11 +200,14 @@ function Members() {
     const matchesSearch =
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (member.email || member.idNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCommittee =
-      roleFilter === 'admin' ||
-      roleFilter === 'all_users' ||
-      committeeFilter === 'all' ||
-      member.committee === committeeFilter
+    const normalizedCommitteeFilter = String(committeeFilter || '').trim()
+    const memberCommittee = String(member?.committee || '').trim()
+    const matchesCommittee = (() => {
+      if (normalizedCommitteeFilter === 'all') return true
+      // Admin users are not tied to a committee; keep them visible when viewing "All Users".
+      if (memberType === 'admin') return true
+      return memberCommittee === normalizedCommitteeFilter
+    })()
     const normalizedInsurance = String(member?.insuranceStatus || '').trim().toLowerCase()
     const isInsured = normalizedInsurance === 'insured'
     const matchesInsurance =
