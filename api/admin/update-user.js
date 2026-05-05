@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from './_rateLimit.js'
+import { normalizePhMobileE164 } from './_normalizePhone.js'
 
 /* global process, Buffer */
 
@@ -45,9 +46,11 @@ const buildProfilePatch = (updates = {}) => {
   }
   if (Object.prototype.hasOwnProperty.call(updates, 'category')) patch.category = normalizeText(updates.category) || null
   if (Object.prototype.hasOwnProperty.call(updates, 'address')) patch.address = normalizeText(updates.address) || null
-  if (Object.prototype.hasOwnProperty.call(updates, 'contactNumber')) patch.contact_number = normalizeText(updates.contactNumber) || null
+  if (Object.prototype.hasOwnProperty.call(updates, 'contactNumber')) {
+    patch.contact_number = normalizePhMobileE164(updates.contactNumber) || null
+  }
   if (Object.prototype.hasOwnProperty.call(updates, 'emergencyContactNumber')) {
-    patch.emergency_contact_number = normalizeText(updates.emergencyContactNumber) || null
+    patch.emergency_contact_number = normalizePhMobileE164(updates.emergencyContactNumber) || null
   }
   if (Object.prototype.hasOwnProperty.call(updates, 'emergencyContactName')) {
     patch.emergency_contact_name = normalizeText(updates.emergencyContactName) || null

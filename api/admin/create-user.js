@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { rateLimit } from './_rateLimit.js'
+import { normalizePhMobileE164 } from './_normalizePhone.js'
 
 /* global process, Buffer */
 
@@ -62,14 +63,17 @@ export default async function handler(req, res) {
     })
 
     const token = getBearerToken(req.headers.authorization)
-    if (!token) return res.status(401).json({ message: 'Missing Authorization header.' })
+    if (!token) return res.status(401).json({ message: 'Missing Authorization header (Bearer token).' })
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
     const caller = authData?.user
     if (authError || !caller?.id) {
       const hint =
-        'Invalid session. Make sure the API and the browser are using the same Supabase project (SUPABASE_URL should match VITE_SUPABASE_URL) and that you are logged in.'
-      return res.status(401).json({ message: hint })
+        'Invalid session. Ensure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are from the same Supabase project as VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY, and that you are logged in.'
+      return res.status(401).json({
+        message: hint,
+        details: authError?.message ? String(authError.message) : 'Unknown auth error',
+      })
     }
 
     const { data: callerProfile, error: callerProfileError } = await supabaseAdmin
@@ -148,8 +152,8 @@ export default async function handler(req, res) {
       committee: body.committee ? String(body.committee).trim() : null,
       committee_role: committeeRole,
       address: body.address ? String(body.address).trim() : null,
-      contact_number: body.contactNumber ? String(body.contactNumber).trim() : null,
-      emergency_contact_number: body.emergencyContactNumber ? String(body.emergencyContactNumber).trim() : null,
+      contact_number: body.contactNumber ? (normalizePhMobileE164(body.contactNumber) || null) : null,
+      emergency_contact_number: body.emergencyContactNumber ? (normalizePhMobileE164(body.emergencyContactNumber) || null) : null,
       emergency_contact_name: body.emergencyContactName ? String(body.emergencyContactName).trim() : null,
       emergency_contact_relationship: body.emergencyContactRelationship ? String(body.emergencyContactRelationship).trim() : null,
       blood_type: body.bloodType ? String(body.bloodType).trim().toUpperCase() : null,

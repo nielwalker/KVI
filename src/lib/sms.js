@@ -18,12 +18,28 @@ export const sendAssignmentSms = async ({ memberIds = [], category = '', dateTim
     headers: {
       'content-type': 'application/json',
       authorization: `Bearer ${token}`,
+      'x-supabase-token': token,
     },
     body: JSON.stringify({ memberIds: ids, category, dateTime, location }),
   })
 
   const json = await resp.json().catch(() => null)
-  if (!resp.ok) return { ok: false, error: json?.error || 'Failed to send SMS' }
+  if (resp.status === 404) {
+    return {
+      ok: false,
+      error:
+        'SMS endpoint not found. Start the app with `npm run dev:vercel` (or deploy to Vercel) so `/api/*` routes work.',
+      details: json,
+      status: resp.status,
+    }
+  }
+  if (!resp.ok) {
+    return {
+      ok: false,
+      error: json?.error || json?.message || 'Failed to send SMS',
+      details: json,
+      status: resp.status,
+    }
+  }
   return json
 }
-

@@ -3,6 +3,7 @@ import { Save, Image as ImageIcon, Phone, MapPin, Droplets, User, Mail, Shield, 
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '../context/useToast'
+import { normalizePhMobileE164 } from '../lib/phone'
 
 function EditAccount() {
   const navigate = useNavigate()
@@ -98,9 +99,9 @@ function EditAccount() {
     setIsSaving(true)
 
     // Basic validations
-    const phone = form.contactNumber.trim()
-    if (phone && !/^\+?[0-9\-\s]{7,15}$/.test(phone)) {
-      setError('Please enter a valid contact number (7-15 digits, optional +, - or spaces).')
+    const normalizedPhone = normalizePhMobileE164(form.contactNumber)
+    if (form.contactNumber.trim() && !normalizedPhone) {
+      setError('Please enter a valid PH mobile number (e.g. +639123456789).')
       setIsSaving(false)
       return
     }
@@ -140,7 +141,7 @@ function EditAccount() {
       name: form.name,
       email: form.email,
       address: form.address,
-      contactNumber: phone,
+      contactNumber: normalizedPhone,
       bloodType: blood,
       insuranceStatus,
       insuranceYear,

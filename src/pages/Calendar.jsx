@@ -421,6 +421,16 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
   const mapRef = useRef(null)
   const markerRef = useRef(null)
   const leafletRef = useRef(null)
+  const addressRef = useRef(address)
+  const onLocationSelectRef = useRef(onLocationSelect)
+
+  useEffect(() => {
+    addressRef.current = address
+  }, [address])
+
+  useEffect(() => {
+    onLocationSelectRef.current = onLocationSelect
+  }, [onLocationSelect])
 
   useEffect(() => {
     let active = true
@@ -457,13 +467,13 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
           }
           map.setView([nextLocation.lat, nextLocation.lng], Math.max(15, map.getZoom()))
 
-          let resolvedAddress = address
+          let resolvedAddress = addressRef.current
           try {
             resolvedAddress = await reverseGeocode(nextLocation.lat, nextLocation.lng)
           } catch {
-            resolvedAddress = address || `${nextLocation.lat}, ${nextLocation.lng}`
+            resolvedAddress = addressRef.current || `${nextLocation.lat}, ${nextLocation.lng}`
           }
-          onLocationSelect({ address: resolvedAddress, location: nextLocation })
+          onLocationSelectRef.current?.({ address: resolvedAddress, location: nextLocation })
         })
 
         mapRef.current = map
@@ -477,12 +487,16 @@ function EventLocationPicker({ address, location, onAddressInput, onLocationSele
     return () => {
       active = false
       if (mapRef.current) {
-        mapRef.current.remove()
+        try {
+          mapRef.current.remove()
+        } catch {
+          // ignore leaflet cleanup errors (can happen if container unmounted mid-cleanup)
+        }
         mapRef.current = null
       }
       markerRef.current = null
     }
-  }, [address, location, onLocationSelect])
+  }, [])
 
   useEffect(() => {
     if (!mapRef.current || !leafletRef.current) return
@@ -1446,12 +1460,20 @@ function Calendar({ listOnly = false }) {
 
     // Optional: send SMS alerts for new assignments (server-side, controlled via env vars).
     try {
-      await sendAssignmentSms({
+      const result = await sendAssignmentSms({
         memberIds: newlyAssigned,
         category: event?.category || '',
         dateTime: event?.dateTime || '',
         location: event?.address || event?.location?.address || '',
       })
+      if (result && result.ok === false) {
+        console.warn('Assignment SMS failed.', result)
+        toast.push({
+          type: 'error',
+          title: 'SMS Failed',
+          message: result.error || 'Failed to send assignment SMS.',
+        })
+      }
     } catch {
       // ignore SMS failures (notifications still stored in-app)
     }

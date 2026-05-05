@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowLeft, Mail, Calendar, User, Trash2, Eye, EyeOff, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, useParams } from 'react-router-dom'
+import { normalizePhMobileE164 } from '../lib/phone'
 
 const BLOOD_TYPE_OPTIONS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
 
@@ -58,12 +59,19 @@ function MemberDetail() {
     if (typeof ensureAdminDataLoaded !== 'function') return
 
     let active = true
-    setAdminDataLoading(true)
-    Promise.resolve(ensureAdminDataLoaded())
-      .catch(() => undefined)
-      .finally(() => {
+
+    const run = async () => {
+      setAdminDataLoading(true)
+      try {
+        await Promise.resolve(ensureAdminDataLoaded())
+      } catch {
+        // ignore
+      } finally {
         if (active) setAdminDataLoading(false)
-      })
+      }
+    }
+
+    run()
 
     return () => {
       active = false
@@ -133,14 +141,25 @@ function MemberDetail() {
     const nextRole = resolvedType === 'admin' || resolvedType === 'oic' ? 'admin' : 'member'
     const nextCommitteeRole = resolvedType === 'oic' ? 'OIC' : 'Member'
     const nextCommittee = resolvedType === 'member' ? editForm.committee : ''
+    const contactNumber = normalizePhMobileE164(editForm.contactNumber)
+    const emergencyContactNumber = normalizePhMobileE164(editForm.emergencyContactNumber)
+
+    if (String(editForm.contactNumber || '').trim() && !contactNumber) {
+      setActionError('Invalid contact number. Use +639XXXXXXXXX.')
+      return
+    }
+    if (String(editForm.emergencyContactNumber || '').trim() && !emergencyContactNumber) {
+      setActionError('Invalid emergency contact number. Use +639XXXXXXXXX.')
+      return
+    }
 
     const updates = {
       role: nextRole,
       idNumber: editForm.idNumber,
       name: editForm.name,
       address: editForm.address,
-      contactNumber: editForm.contactNumber,
-      emergencyContactNumber: editForm.emergencyContactNumber,
+      contactNumber,
+      emergencyContactNumber,
       emergencyContactName: editForm.emergencyContactName,
       emergencyContactRelationship: editForm.emergencyContactRelationship,
       bloodType: editForm.bloodType,

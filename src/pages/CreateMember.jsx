@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/useToast'
+import { normalizePhMobileE164 } from '../lib/phone'
 
 const ROLE_OPTIONS = [
   { value: 'member', label: 'Member' },
@@ -154,10 +155,25 @@ export default function CreateMember({ recruitmentId: recruitmentIdProp, onClose
     setSaving(true)
     const role = String(member.role || '').trim() || 'member'
     const ensuredCommittee = role === 'member' ? (String(member.committee || '').trim() || committeeOptions[0] || '') : ''
+    const contactNumber = normalizePhMobileE164(member.contactNumber)
+    const emergencyContactNumber = normalizePhMobileE164(member.emergencyContactNumber)
+
+    if (String(member.contactNumber || '').trim() && !contactNumber) {
+      toast.error('Invalid contact number. Use +639XXXXXXXXX.', { title: 'Error' })
+      setSaving(false)
+      return
+    }
+    if (String(member.emergencyContactNumber || '').trim() && !emergencyContactNumber) {
+      toast.error('Invalid emergency contact number. Use +639XXXXXXXXX.', { title: 'Error' })
+      setSaving(false)
+      return
+    }
     const result = await createMember({
       ...member,
       name: normalizedName,
       committee: ensuredCommittee,
+      contactNumber,
+      emergencyContactNumber,
       recruitmentId: recruitmentId || undefined,
     })
     if (!result.success) {
