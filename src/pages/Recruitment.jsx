@@ -133,9 +133,10 @@ function Recruitment() {
           <button
             type="button"
             onClick={() => navigate('/landing')}
-            className="inline-flex items-center gap-2 rounded-lg border border-yellow-400 bg-transparent px-3 py-2 text-sm font-medium text-yellow-500 transition-colors hover:bg-yellow-400/10"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
             aria-label="Back to landing"
           >
+            <ArrowLeft size={16} />
             Back
           </button>
         </div>

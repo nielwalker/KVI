@@ -155,8 +155,12 @@ export default function OrganizationStructure({ mode = 'board' }) {
         contactNumber: String(member?.contactNumber || member?.contact_number || '').trim(),
         bloodType: String(member?.bloodType || member?.blood_type || '').trim(),
         role: String(member?.role || '').trim(),
-        committee: String(member?.committee || '').trim(),
         committeeRole: String(member?.committeeRole || member?.committee_role || '').trim(),
+        committee: (() => {
+          const committeeRole = String(member?.committeeRole || member?.committee_role || '').trim()
+          const isOic = committeeRole.toLowerCase() === 'oic' || String(member?.role || '').trim().toLowerCase() === 'oic'
+          return isOic ? '' : String(member?.committee || '').trim()
+        })(),
         memberSince: member?.memberSince || member?.member_since || '',
         status: String(member?.status || '').trim(),
       }))
@@ -187,8 +191,12 @@ export default function OrganizationStructure({ mode = 'board' }) {
           contactNumber: String(row?.contact_number || row?.contactNumber || '').trim(),
           bloodType: String(row?.blood_type || row?.bloodType || '').trim(),
           role: String(row?.role || '').trim(),
-          committee: String(row?.committee || '').trim(),
           committeeRole: String(row?.committee_role || row?.committeeRole || '').trim(),
+          committee: (() => {
+            const committeeRole = String(row?.committee_role || row?.committeeRole || '').trim()
+            const isOic = committeeRole.toLowerCase() === 'oic' || String(row?.role || '').trim().toLowerCase() === 'oic'
+            return isOic ? '' : String(row?.committee || '').trim()
+          })(),
           memberSince: row?.member_since || row?.memberSince || '',
           status: String(row?.status || '').trim(),
         }))
@@ -464,7 +472,7 @@ export default function OrganizationStructure({ mode = 'board' }) {
         <button
           type="button"
           onClick={() => navigate('/landing')}
-          className="mb-6 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-white/80 transition hover:bg-white/15 hover:text-white"
+          className="mb-6 inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
         >
           <ArrowLeft size={15} />
           Back to Landing

@@ -29,31 +29,31 @@ import './index.css'
 
 function AuthPendingState({ title = 'Loading your session...' }) {
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-8">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-4 h-10 w-40 animate-pulse rounded-xl bg-white shadow-sm" />
-        <div className="grid gap-4 md:grid-cols-[240px_1fr]">
-          <div className="hidden rounded-2xl bg-white p-4 shadow-sm md:block">
-            <div className="mb-3 h-6 w-28 animate-pulse rounded bg-gray-200" />
-            <div className="space-y-2">
-              <div className="h-10 animate-pulse rounded-lg bg-gray-100" />
-              <div className="h-10 animate-pulse rounded-lg bg-gray-100" />
-              <div className="h-10 animate-pulse rounded-lg bg-gray-100" />
+    <div
+      className="min-h-screen px-4 py-10 text-white"
+      style={{ background: 'linear-gradient(135deg, #0b1f5a 0%, #1e40af 55%, #2563eb 100%)' }}
+    >
+      <div className="relative mx-auto flex min-h-[70vh] w-full max-w-4xl items-center justify-center">
+        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-yellow-400/15 blur-3xl" />
+        <div className="absolute -left-28 -bottom-28 h-80 w-80 rounded-full bg-cyan-300/10 blur-3xl" />
+
+        <div className="relative w-full overflow-hidden rounded-3xl border border-white/15 bg-white/10 p-8 shadow-[0_24px_70px_rgba(8,47,73,0.26)] backdrop-blur-xl sm:p-10">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 shadow-[0_14px_32px_rgba(15,23,42,0.18)] backdrop-blur-md">
+              <img src="/kvi.png" alt="KUSGAN logo" className="h-10 w-10 object-contain" />
             </div>
-          </div>
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="h-3 w-3 animate-pulse rounded-full bg-red-600" />
-              <p className="text-sm font-medium text-gray-700">{title}</p>
+            <div className="space-y-1">
+              <p className="text-sm font-semibold tracking-[0.2em] uppercase text-yellow-200/90">KUSGAN</p>
+              <h1 className="text-xl font-semibold text-white sm:text-2xl">{title}</h1>
             </div>
-            <div className="space-y-3">
-              <div className="h-5 w-48 animate-pulse rounded bg-gray-200" />
-              <div className="h-24 animate-pulse rounded-xl bg-gray-100" />
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="h-28 animate-pulse rounded-xl bg-gray-100" />
-                <div className="h-28 animate-pulse rounded-xl bg-gray-100" />
-              </div>
+
+            <div className="mt-2 flex items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-yellow-300" aria-hidden="true" />
+              <p className="text-sm text-white/75">Preparing your workspace…</p>
             </div>
+
+            <div className="mt-6 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <p className="text-xs text-white/60">This usually takes a few seconds.</p>
           </div>
         </div>
       </div>

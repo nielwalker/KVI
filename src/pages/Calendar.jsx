@@ -40,6 +40,7 @@ import {
   updateSupabaseEvent,
 } from '../lib/supabaseEvents'
 import { insertAssignmentNotifications } from '../lib/supabaseNotifications'
+import { sendAssignmentSms } from '../lib/sms'
 import { buildActivityValueRow } from '../lib/activityValues'
 
 const CATEGORY_CONFIG = {
@@ -1442,6 +1443,18 @@ function Calendar({ listOnly = false }) {
       event,
       assignedBy: user?.name || 'Admin',
     })
+
+    // Optional: send SMS alerts for new assignments (server-side, controlled via env vars).
+    try {
+      await sendAssignmentSms({
+        memberIds: newlyAssigned,
+        category: event?.category || '',
+        dateTime: event?.dateTime || '',
+        location: event?.address || event?.location?.address || '',
+      })
+    } catch {
+      // ignore SMS failures (notifications still stored in-app)
+    }
   }
 
   const currentUserId = String(user?.id || '')
@@ -3524,7 +3537,7 @@ function matchesStatusFilter(item, selectedStatusFilter) {
                 setExpandedItemId(null)
                 setSelectedDateFilter('')
               }}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-red-600 text-white hover:bg-red-700 transition-colors"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
             >
               <ChevronLeft size={16} />
               Back

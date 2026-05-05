@@ -66,7 +66,11 @@ export default async function handler(req, res) {
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token)
     const caller = authData?.user
-    if (authError || !caller?.id) return res.status(401).json({ message: 'Invalid session.' })
+    if (authError || !caller?.id) {
+      const hint =
+        'Invalid session. Make sure the API and the browser are using the same Supabase project (SUPABASE_URL should match VITE_SUPABASE_URL) and that you are logged in.'
+      return res.status(401).json({ message: hint })
+    }
 
     const { data: callerProfile, error: callerProfileError } = await supabaseAdmin
       .from('profiles')

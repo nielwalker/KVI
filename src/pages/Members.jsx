@@ -175,11 +175,12 @@ function Members() {
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (member.email || member.idNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
     const normalizedCommitteeFilter = String(committeeFilter || '').trim()
-    const memberCommittee = String(member?.committee || '').trim()
+    const memberCommittee = memberType === 'oic' ? '' : String(member?.committee || '').trim()
     const matchesCommittee = (() => {
       if (normalizedCommitteeFilter === 'all') return true
       // Admin users are not tied to a committee; keep them visible when viewing "All Users".
       if (memberType === 'admin') return true
+      if (memberType === 'oic') return false
       return memberCommittee === normalizedCommitteeFilter
     })()
     const normalizedInsurance = String(member?.insuranceStatus || '').trim().toLowerCase()
