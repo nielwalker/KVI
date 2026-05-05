@@ -75,6 +75,7 @@ import { supabase } from '../lib/supabaseClient'
 import { fetchSupabaseEvents, invalidateSupabaseEventsCache, isSupabaseEnabled } from '../lib/supabaseEvents'
 import { fetchMyNotifications } from '../lib/supabaseNotifications'
 import { useConfirm } from '../context/useConfirm'
+import { useToast } from '../context/useToast'
 
 const normalizeCategoryKey = value =>
   String(value || '')
@@ -343,6 +344,7 @@ function Dashboard() {
   const { user, categories } = useAuth()
   const { t } = useI18n()
   const confirm = useConfirm()
+  const toast = useToast()
   const navigate = useNavigate()
   const isAdmin = user?.role === 'admin'
   const userCommitteeRole = user?.committeeRole || user?.committee_role || 'Member'
@@ -368,11 +370,17 @@ function Dashboard() {
     let active = true
 
     const load = async () => {
-      setEvents([])
-      invalidateSupabaseEventsCache()
-      const { data } = await fetchSupabaseEvents({ force: true })
-      if (!active) return
-      setEvents(data)
+      try {
+        setEvents([])
+        invalidateSupabaseEventsCache()
+        const { data } = await fetchSupabaseEvents({ force: true })
+        if (!active) return
+        setEvents(data)
+      } catch (error) {
+        if (!active) return
+        setEvents([])
+        toast.error(error?.message || 'Failed to load dashboard events.', { title: t('Error') })
+      }
     }
 
     void load()
@@ -380,7 +388,7 @@ function Dashboard() {
     return () => {
       active = false
     }
-  }, [categories, supabaseEnabled, user?.id])
+  }, [categories, supabaseEnabled, t, toast, user?.id])
 
   useEffect(() => {
     if (!supabaseEnabled) {
@@ -407,8 +415,10 @@ function Dashboard() {
           next[key] = { iconKey, color }
         })
         setCategoryMetaByKey(next)
-      } catch {
-        if (active) setCategoryMetaByKey({})
+      } catch (error) {
+        if (!active) return
+        setCategoryMetaByKey({})
+        toast.error(error?.message || 'Failed to load category metadata.', { title: t('Error') })
       }
     }
 
@@ -416,7 +426,7 @@ function Dashboard() {
     return () => {
       active = false
     }
-  }, [supabaseEnabled])
+  }, [supabaseEnabled, t, toast])
 
   useEffect(() => {
     if (!notificationsOpen) return
@@ -454,9 +464,15 @@ function Dashboard() {
     })
 
     const loadInitial = async () => {
-      const { data } = await fetchMyNotifications(user.id, 80)
-      if (!active) return
-      setNotifications(data.map(mapRow))
+      try {
+        const { data } = await fetchMyNotifications(user.id, 80)
+        if (!active) return
+        setNotifications(data.map(mapRow))
+      } catch (error) {
+        if (!active) return
+        setNotifications([])
+        toast.error(error?.message || 'Failed to load notifications.', { title: t('Error') })
+      }
     }
 
     void loadInitial()
@@ -502,7 +518,7 @@ function Dashboard() {
       active = false
       supabase.removeChannel(channel)
     }
-  }, [supabaseEnabled, user?.id])
+  }, [supabaseEnabled, t, toast, user?.id])
 
   const recentEvents = useMemo(() => {
     return [...events]
@@ -613,7 +629,17 @@ function Dashboard() {
         : item
     )
     setNotifications(updated)
-    await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', notificationId)
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .eq('id', notificationId)
+      if (error) throw error
+      toast.success(t('Notification updated.'), { title: t('Success') })
+    } catch (error) {
+      setNotifications(notifications)
+      toast.error(error?.message || 'Failed to update notification.', { title: t('Error') })
+    }
   }
 
   const handleOpenNotification = notification => {
@@ -640,7 +666,14 @@ function Dashboard() {
     if (!ok) return
     const updated = notifications.filter(item => item.id !== notificationId)
     setNotifications(updated)
-    await supabase.from('notifications').delete().eq('id', notificationId)
+    try {
+      const { error } = await supabase.from('notifications').delete().eq('id', notificationId)
+      if (error) throw error
+      toast.success(t('Notification removed.'), { title: t('Success') })
+    } catch (error) {
+      setNotifications(notifications)
+      toast.error(error?.message || 'Failed to remove notification.', { title: t('Error') })
+    }
   }
 
   return (

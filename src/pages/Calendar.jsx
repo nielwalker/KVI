@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import dayjs from 'dayjs'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/useToast'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -854,6 +855,7 @@ function Calendar({ listOnly = false }) {
   const supabaseEnabled = isSupabaseEnabled()
   const routerLocation = useLocation()
   const navigate = useNavigate()
+  const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
   const [events, setEvents] = useState([])
   const [selectedMonthKey, setSelectedMonthKey] = useState(null)
@@ -866,6 +868,7 @@ function Calendar({ listOnly = false }) {
   const [showDoneForm, setShowDoneForm] = useState(false)
   const [markDoneEventId, setMarkDoneEventId] = useState(null)
   const [doneFormError, setDoneFormError] = useState('')
+  const lastToastErrorRef = useRef({ formError: '', doneFormError: '' })
   const [currentYear, setCurrentYear] = useState(dayjs().year())
   const [formError, setFormError] = useState('')
   const [selectedMember, setSelectedMember] = useState(null)
@@ -895,6 +898,20 @@ function Calendar({ listOnly = false }) {
   const [showDoneTypedFieldPicker, setShowDoneTypedFieldPicker] = useState(false)
   const [doneTypedFieldToAdd, setDoneTypedFieldToAdd] = useState('')
   const [visibleDoneTypedFieldIds, setVisibleDoneTypedFieldIds] = useState([])
+
+  useEffect(() => {
+    if (formError && formError !== lastToastErrorRef.current.formError) {
+      lastToastErrorRef.current.formError = formError
+      toast.error(formError, { title: 'Error' })
+    }
+  }, [formError, toast])
+
+  useEffect(() => {
+    if (doneFormError && doneFormError !== lastToastErrorRef.current.doneFormError) {
+      lastToastErrorRef.current.doneFormError = doneFormError
+      toast.error(doneFormError, { title: 'Error' })
+    }
+  }, [doneFormError, toast])
   const eventRefs = useRef({})
   const handledRedirectRef = useRef(false)
   const eventsLoadedRef = useRef(false)
@@ -1538,6 +1555,7 @@ function Calendar({ listOnly = false }) {
       await notifyAssignedMembers(newEvent, [])
       resetForm()
       setShowEventForm(false)
+      toast.success('Event created.', { title: 'Success' })
     }
   }
 
@@ -1569,6 +1587,7 @@ function Calendar({ listOnly = false }) {
       }
     }
     setEvents(prev => prev.filter(event => event.id !== eventId))
+    toast.success('Event deleted.', { title: 'Success' })
   }
 
   const confirmDeleteEvent = eventId => {
@@ -2071,6 +2090,7 @@ function Calendar({ listOnly = false }) {
       await notifyAssignedMembers(updatedEvent, existingEvent?.assignedMemberIds || [])
       resetForm()
       setShowEventForm(false)
+      toast.success('Event updated.', { title: 'Success' })
     }
 
     setPendingConfirmation(null)
@@ -2458,7 +2478,7 @@ function matchesStatusFilter(item, selectedStatusFilter) {
             </div>
 
             <form onSubmit={handleAddEvent} className="calendar-done-modal-body p-4 sm:p-6 space-y-5">
-              {formError && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{formError}</p>}
+
 
               <div className="calendar-done-card rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-800">Category</h4>
@@ -2613,7 +2633,7 @@ function matchesStatusFilter(item, selectedStatusFilter) {
             </div>
 
             <form onSubmit={handleMarkDone} className="calendar-done-modal-body p-4 sm:p-6 space-y-5">
-              {doneFormError && <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">{doneFormError}</p>}
+
 
               <div className="calendar-done-card rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-2">
                 <p className="text-sm font-semibold text-gray-800">Location</p>
@@ -3754,7 +3774,7 @@ function matchesStatusFilter(item, selectedStatusFilter) {
             </div>
 
             <form onSubmit={handleAddEvent} className="calendar-done-modal-body p-4 sm:p-6 space-y-5">
-              {formError && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{formError}</p>}
+
 
               <div className="calendar-done-card rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-800">Category</h4>

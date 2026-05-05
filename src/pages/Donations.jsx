@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { RefreshCw, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabaseClient'
 import { isSupabaseEnabled } from '../lib/supabaseEvents'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/useToast'
 
 function Donations() {
   const { user, authResolved, loading: authLoading } = useAuth()
   const supabaseEnabled = isSupabaseEnabled()
   const isAdmin = user?.role === 'admin'
+  const toast = useToast()
+  const lastToastErrorRef = useRef('')
 
   const [donations, setDonations] = useState([])
   const [loading, setLoading] = useState(true)
@@ -22,6 +25,13 @@ function Donations() {
     authResolved,
     authLoading,
   ])
+
+  useEffect(() => {
+    if (error && error !== lastToastErrorRef.current) {
+      lastToastErrorRef.current = error
+      toast.error(error, { title: 'Error' })
+    }
+  }, [error, toast])
 
   const loadDonations = useCallback(async () => {
     setError('')
@@ -82,6 +92,7 @@ function Donations() {
       }
       setDonations(prev => (Array.isArray(prev) ? prev.filter(row => String(row?.id) !== donationId) : []))
       setPendingDeleteId('')
+      toast.success('Donation deleted.', { title: 'Success' })
     } catch (error) {
       setError(error?.message ? String(error.message) : 'Unable to delete donation record.')
     } finally {
@@ -136,9 +147,7 @@ function Donations() {
           </button>
         </div>
 
-        {error ? (
-          <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-        ) : null}
+
 
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_20px_rgba(0,0,0,0.25)] backdrop-blur-md">
           <div className="overflow-x-auto">

@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Save, Image as ImageIcon, Phone, MapPin, Droplets, User, Mail, Shield, Trash2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
+import { useToast } from '../context/useToast'
 
 function EditAccount() {
   const navigate = useNavigate()
   const { user, updateCurrentUser, uploadProfileImage } = useAuth()
+  const toast = useToast()
+  const lastToastRef = useRef({ error: '', success: '' })
 
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -23,6 +26,20 @@ function EditAccount() {
   const [selectedFile, setSelectedFile] = useState(null)
   const [previewUrl, setPreviewUrl] = useState('')
   const [selectedFileName, setSelectedFileName] = useState('')
+
+  useEffect(() => {
+    if (error && error !== lastToastRef.current.error) {
+      lastToastRef.current.error = error
+      toast.error(error, { title: 'Error' })
+    }
+  }, [error, toast])
+
+  useEffect(() => {
+    if (success && success !== lastToastRef.current.success) {
+      lastToastRef.current.success = success
+      toast.success(success, { title: 'Success' })
+    }
+  }, [success, toast])
 
   useEffect(() => {
     if (!user) {
@@ -195,12 +212,7 @@ function EditAccount() {
               </div>
             </div>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">{error}</div>
-            )}
-            {success && (
-              <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-700 text-sm">{success}</div>
-            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div

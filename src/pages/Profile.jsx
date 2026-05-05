@@ -114,21 +114,13 @@ function Profile() {
       }}
     >
       <div
-        className="relative mb-6 overflow-hidden rounded-3xl border border-white/15 p-1 shadow-[0_24px_70px_rgba(8,47,73,0.26)]"
+        className="relative mb-6 overflow-hidden rounded-[22px] border border-white/10 p-6 shadow-[0_24px_70px_rgba(8,47,73,0.26)] backdrop-blur-md md:p-8"
         style={{
-          background: 'linear-gradient(145deg, rgba(14,116,144,0.88), rgba(30,64,175,0.84) 52%, rgba(59,130,246,0.78))',
-          backdropFilter: 'blur(18px)',
+          background: 'linear-gradient(145deg, rgba(14,116,144,0.34), rgba(30,64,175,0.28) 52%, rgba(96,165,250,0.24))',
         }}
       >
         <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-cyan-300/15 blur-3xl" />
         <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-blue-200/10 blur-3xl" />
-
-        <div
-          className="relative rounded-[22px] border border-white/10 p-6 backdrop-blur-md md:p-8"
-          style={{
-            background: 'linear-gradient(145deg, rgba(14,116,144,0.34), rgba(30,64,175,0.28) 52%, rgba(96,165,250,0.24))',
-          }}
-        >
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
             <div className="flex items-start gap-4">
               <div className="h-24 w-24 overflow-hidden rounded-2xl border border-white/70 bg-[#1d4ed8]/25 shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
@@ -140,9 +132,7 @@ function Profile() {
               </div>
 
               <div>
-                <p className="mb-1 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-100">{t('Account Center')}</p>
                 <h2 className="font-heading text-3xl font-bold text-white">{user?.name || t('User Profile')}</h2>
-                <p className="text-white/75">{user?.email || t('No email available')}</p>
                 <div className="flex items-center gap-2 mt-3">
                   <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${
                     userType === 'admin'
@@ -245,10 +235,6 @@ function Profile() {
               <p className="mb-2 text-xs uppercase tracking-[0.16em] text-white/65">{t('Profile Completion')}</p>
               <div className="flex items-end justify-between gap-3">
                 <p className="text-2xl font-bold text-white">{completion}%</p>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-yellow-200">
-                  <Sparkles size={14} />
-                  {t('Keep details updated')}
-                </span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-blue-200/20">
                 <div
@@ -269,7 +255,6 @@ function Profile() {
               <p className="text-lg font-semibold text-white">{user?.idNumber || 'N/A'}</p>
             </div>
           </div>
-        </div>
       </div>
 
       <div

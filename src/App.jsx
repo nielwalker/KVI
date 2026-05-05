@@ -8,6 +8,7 @@ import Profile from './pages/Profile'
 import ChangePassword from './pages/ChangePassword'
 import EditAccount from './pages/EditAccount'
 import Members from './pages/Members'
+import CreateMember from './pages/CreateMember'
 import MemberDetail from './pages/MemberDetail'
 import Donations from './pages/Donations'
 import Report from './pages/Report'
@@ -158,6 +159,7 @@ function AppRoutes() {
         <Route path="change-password" element={<ChangePassword />} />
         <Route path="settings" element={<Settings />} />
         <Route path="members" element={<AdminRoute><Members /></AdminRoute>} />
+        <Route path="members/create" element={<AdminRoute><CreateMember /></AdminRoute>} />
         <Route path="members/:id" element={<AdminRoute><MemberDetail /></AdminRoute>} />
         <Route path="donations" element={<AdminRoute><Donations /></AdminRoute>} />
       </Route>

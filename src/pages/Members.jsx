@@ -16,11 +16,10 @@ import {
   MapPin,
   Droplets,
   Shield,
-  Eye,
-  EyeOff,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../context/useConfirm'
+import { useToast } from '../context/useToast'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 
@@ -73,8 +72,6 @@ function Members() {
     user,
     getAllMembers,
     getAdmins,
-    createMember,
-    uploadMemberProfileImage,
     committees,
     deleteMembers,
     getRecruitments,
@@ -83,53 +80,40 @@ function Members() {
   } = useAuth()
   const navigate = useNavigate()
   const confirm = useConfirm()
+  const toast = useToast()
+  const lastToastErrorRef = useRef({ recruitmentActionError: '', bulkDeleteError: '' })
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('all_users')
   const [committeeFilter, setCommitteeFilter] = useState('all')
   const [insuranceFilter, setInsuranceFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const [formError, setFormError] = useState('')
   const [recruitmentActionError, setRecruitmentActionError] = useState('')
   const [selectedMemberIds, setSelectedMemberIds] = useState(() => new Set())
   const [bulkDeleteBusy, setBulkDeleteBusy] = useState(false)
   const [bulkDeleteError, setBulkDeleteError] = useState('')
   const [exportingPdf, setExportingPdf] = useState(false)
   const selectAllRef = useRef(null)
-  const [newMemberImagePreviewUrl, setNewMemberImagePreviewUrl] = useState('')
-  const [newMemberImageFile, setNewMemberImageFile] = useState(null)
+
+  useEffect(() => {
+    if (recruitmentActionError && recruitmentActionError !== lastToastErrorRef.current.recruitmentActionError) {
+      lastToastErrorRef.current.recruitmentActionError = recruitmentActionError
+      toast.error(recruitmentActionError, { title: 'Error' })
+    }
+  }, [recruitmentActionError, toast])
+
+  useEffect(() => {
+    if (bulkDeleteError && bulkDeleteError !== lastToastErrorRef.current.bulkDeleteError) {
+      lastToastErrorRef.current.bulkDeleteError = bulkDeleteError
+      toast.error(bulkDeleteError, { title: 'Error' })
+    }
+  }, [bulkDeleteError, toast])
 
   useEffect(() => {
     if (user?.role !== 'admin') return
     void ensureAdminDataLoaded()
   }, [ensureAdminDataLoaded, user?.role, user?.id])
   const [expandedRecruitmentId, setExpandedRecruitmentId] = useState(null)
-  const [pendingApprovalRecruitmentId, setPendingApprovalRecruitmentId] = useState(null)
-	  const [newMember, setNewMember] = useState({
-	    name: '',
-	    idNumber: '',
-	    password: '',
-	    address: '',
-	    contactNumber: '',
-      emergencyContactNumber: '',
-      emergencyContactName: '',
-      emergencyContactRelationship: '',
-    bloodType: '',
-    insuranceStatus: 'N/A',
-    insuranceYear: '',
-    memberSince: dayjs().format('YYYY-MM-DD'),
-    status: 'active',
-    role: ROLE_OPTIONS[0].value,
-    committee: committees[0] || '',
-    committeeRole: 'Member',
-  })
-  const [showTempPassword, setShowTempPassword] = useState(false)
   const membersPerPage = 9
-
-  const normalizeMemberName = (value) =>
-    String(value || '')
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ')
 
   const members = useMemo(() => {
     const allMembers = getAllMembers()
@@ -155,16 +139,6 @@ function Members() {
     unique.sort((a, b) => a.localeCompare(b))
     return unique
   }, [committees])
-
-  useEffect(() => {
-    if (committeeOptions.length === 0) return
-    setNewMember(prev => {
-      if (prev?.role === 'admin' || prev?.role === 'oic' || prev?.committeeRole === 'OIC') return prev
-      const currentCommittee = String(prev?.committee || '').trim()
-      if (currentCommittee && committeeOptions.includes(currentCommittee)) return prev
-      return { ...prev, committee: committeeOptions[0] }
-    })
-  }, [committeeOptions])
 
   useEffect(() => {
     if (committeeFilter === 'all') return
@@ -350,7 +324,7 @@ function Members() {
 
       doc.save(`users_${dayjs().format('YYYYMMDD_HHmmss')}.pdf`)
     } catch (error) {
-      alert(error?.message || 'Failed to generate PDF.')
+      toast.error(error?.message || 'Failed to generate PDF.', { title: 'Error' })
     } finally {
       setExportingPdf(false)
     }
@@ -369,6 +343,7 @@ function Members() {
       return
     }
     setSelectedMemberIds(new Set())
+    toast.success('Members deleted.', { title: 'Success' })
   }
 
   useEffect(() => {
@@ -385,64 +360,6 @@ function Members() {
     selectAllRef.current.indeterminate = hasSelectedOnPage && !allSelectedOnPage
   }, [hasSelectedOnPage, allSelectedOnPage])
 
- 	  const handleCreateMember = async (e) => {
-    e.preventDefault()
-    setFormError('')
-
-    const normalizedName = String(newMember.name || '').trim().replace(/\s+/g, ' ')
-    if (!normalizedName) {
-      setFormError('Full name is required.')
-      return
-    }
-
-    const alreadyExists = [...admins, ...members].some(member =>
-      normalizeMemberName(member?.name) === normalizeMemberName(normalizedName)
-    )
-    if (alreadyExists) {
-      setFormError('Member already exists.')
-      return
-    }
-
-    const result = await createMember({
- 	      ...newMember,
-        name: normalizedName,
- 	      recruitmentId: pendingApprovalRecruitmentId || undefined,
- 	    })
-    if (!result.success) {
-      setFormError(result.message)
-      return
-    }
-
-    if (newMemberImageFile && result.userId) {
-      const uploadResult = await uploadMemberProfileImage(result.userId, newMemberImageFile)
-      if (!uploadResult.success) {
-        setFormError(uploadResult.message || 'Member created but image upload failed.')
-      }
-    }
-
-	    setNewMember({
-	      name: '',
-	      idNumber: '',
-	      password: '',
-	      address: '',
-	      contactNumber: '',
-        emergencyContactNumber: '',
-        emergencyContactName: '',
-        emergencyContactRelationship: '',
-      bloodType: '',
-      insuranceStatus: 'N/A',
-      insuranceYear: '',
-      memberSince: dayjs().format('YYYY-MM-DD'),
-      status: 'active',
-      role: ROLE_OPTIONS[0].value,
-      committee: committeeOptions[0] || '',
-      committeeRole: 'Member',
-    })
-    setNewMemberImageFile(null)
-    setPendingApprovalRecruitmentId(null)
-    setRecruitmentActionError('')
-  }
-
   const getStatusBadgeClass = status => {
     if (status === 'approved') return 'bg-[#ffffff] text-green-700 border-green-200'
     if (status === 'rejected') return 'bg-[#ffffff] text-red-700 border-red-200'
@@ -451,30 +368,15 @@ function Members() {
 
 	  const handleApproveRecruitment = (recruitment) => {
 	    setRecruitmentActionError('')
-	    setPendingApprovalRecruitmentId(recruitment.id)
-	    setNewMember({
-	      name: recruitment.fullName,
-	      idNumber: recruitment.idNumber || '',
-	      password: '',
-	      address: recruitment.address || '',
-	      contactNumber: recruitment.contactNumber || '',
-        emergencyContactNumber: recruitment.emergencyContactNumber || '',
-        emergencyContactName: recruitment.emergencyContactName || '',
-        emergencyContactRelationship: recruitment.emergencyContactRelationship || '',
-      bloodType: recruitment.bloodType || '',
-      insuranceStatus: recruitment.insuranceStatus || 'N/A',
-      insuranceYear: recruitment.insuranceYear || '',
-      memberSince: dayjs().format('YYYY-MM-DD'),
-      status: 'active',
-      role: ROLE_OPTIONS[0].value,
-      committee: committeeOptions[0] || '',
-      committeeRole: 'Member',
-    })
-    setNewMemberImageFile(null)
-    const createMemberSection = document.getElementById('create-member-form')
-    if (createMemberSection) {
-      createMemberSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
+      try {
+        window.sessionStorage.setItem(
+          `kusgan.recruitmentDraft:${recruitment.id}`,
+          JSON.stringify(recruitment || {})
+        )
+      } catch {
+        // ignore
+      }
+      navigate(`/members/create?recruitmentId=${encodeURIComponent(recruitment.id)}`)
   }
 
 	  const handleRejectRecruitment = async (recruitmentId) => {
@@ -492,28 +394,8 @@ function Members() {
 	      setRecruitmentActionError(result.message)
 	      return
 	    }
-    if (pendingApprovalRecruitmentId === recruitmentId) {
-      setPendingApprovalRecruitmentId(null)
-    }
+    toast.success('Application rejected.', { title: 'Success' })
   }
-
-  useEffect(() => {
-    if (!newMemberImageFile) {
-      setNewMemberImagePreviewUrl('')
-      return undefined
-    }
-
-    const nextUrl = URL.createObjectURL(newMemberImageFile)
-    setNewMemberImagePreviewUrl(nextUrl)
-
-    return () => {
-      try {
-        URL.revokeObjectURL(nextUrl)
-      } catch {
-        // ignore
-      }
-    }
-  }, [newMemberImageFile])
 
   return (
     <div className="animate-fade-in text-gray-900 dark:text-zinc-100">
@@ -521,306 +403,20 @@ function Members() {
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-zinc-100">User Management</h2>
         </div>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/members/create')
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
+          >
+            Create Account
+          </button>
+        )}
       </div>
 
-      {isAdmin && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_20px_rgba(0,0,0,0.25)] backdrop-blur-md xl:col-span-2">
-            <h3 className="mb-3 font-semibold text-white">Create Member</h3>
-            {pendingApprovalRecruitmentId && (
-              <div className="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                Recruitment approval in progress. Complete member creation to mark this application as approved.
-              </div>
-            )}
-            {formError && <p className="text-sm text-red-600 mb-2">{formError}</p>}
-            <form id="create-member-form" onSubmit={handleCreateMember} className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="create-member-name" className="block text-xs text-gray-500 mb-1">Full Name</label>
-                <input
-                  id="create-member-name"
-                  name="name"
-                  type="text"
-                  placeholder="Full name"
-                  value={newMember.name}
-                  onChange={e => setNewMember({ ...newMember, name: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  required
-                  autoComplete="name"
-                />
-              </div>
-              <div className="flex flex-col items-center md:row-span-2">
-                <div
-                  className="flex h-[150px] w-[150px] items-center justify-center overflow-hidden rounded-2xl border border-slate-200 !bg-white shadow-[0_14px_32px_rgba(15,23,42,0.12)]"
-                  style={{ colorScheme: 'light', backgroundColor: '#ffffff' }}
-                >
-                  {newMemberImagePreviewUrl ? (
-                    <img
-                      src={newMemberImagePreviewUrl}
-                      alt="Selected profile preview"
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="flex h-full w-full items-center justify-center !bg-white text-xs text-slate-400"
-                      style={{ backgroundColor: '#ffffff' }}
-                    >
-                      No preview
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label htmlFor="create-member-image" className="block text-xs text-gray-500 mb-1">Profile Image (optional)</label>
-                <div
-                  className="flex min-h-[56px] items-center gap-3 rounded-xl border border-slate-200 !bg-white px-3 py-2 text-slate-700 shadow-[0_12px_30px_rgba(15,23,42,0.08)]"
-                  style={{ colorScheme: 'light', backgroundColor: '#ffffff' }}
-                >
-                  <label
-                    htmlFor="create-member-image"
-                    className="inline-flex cursor-pointer items-center justify-center rounded-xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-[0_8px_24px_rgba(250,204,21,0.35)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
-                  >
-                    Choose File
-                  </label>
-                  <span className="min-w-0 truncate text-sm text-slate-600">
-                    {newMemberImageFile?.name || 'No file chosen'}
-                  </span>
-                </div>
-                <input
-                  id="create-member-image"
-                  name="profileImage"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setNewMemberImageFile(e.target.files?.[0] || null)}
-                  className="sr-only"
-                />
-              </div>
-              <div>
-                <label htmlFor="create-member-id-number" className="block text-xs text-gray-500 mb-1">ID Number</label>
-                <input
-                  id="create-member-id-number"
-                  name="idNumber"
-                  type="text"
-                  placeholder="ID Number"
-                  value={newMember.idNumber}
-                  onChange={e => setNewMember({ ...newMember, idNumber: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  required
-                  autoComplete="off"
-                />
-              </div>
-              <div>
-                <label htmlFor="create-member-password" className="block text-xs text-gray-500 mb-1">Temporary Password</label>
-                <div className="relative">
-                  <input
-                    id="create-member-password"
-                    name="password"
-                    type={showTempPassword ? 'text' : 'password'}
-                    placeholder="Temporary password"
-                    value={newMember.password}
-                    onChange={e => setNewMember({ ...newMember, password: e.target.value })}
-                    className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 pr-10 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                    required
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowTempPassword(prev => !prev)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-yellow-300"
-                    aria-label={showTempPassword ? 'Hide password' : 'Show password'}
-                    title={showTempPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showTempPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label htmlFor="create-member-address" className="block text-xs text-gray-500 mb-1">Address</label>
-                <input
-                  id="create-member-address"
-                  name="address"
-                  type="text"
-                  placeholder="Address"
-                  value={newMember.address}
-                  onChange={e => setNewMember({ ...newMember, address: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  autoComplete="street-address"
-                />
-              </div>
-                <div>
-                  <label htmlFor="create-member-contact-number" className="block text-xs text-gray-500 mb-1">Contact Number</label>
-                 <input
-                   id="create-member-contact-number"
-                   name="contactNumber"
-                   type="text"
-                   placeholder="Contact Number"
-                   value={newMember.contactNumber}
-                   onChange={e => setNewMember({ ...newMember, contactNumber: e.target.value })}
-                   className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                   autoComplete="tel"
-                 />
-                </div>
-                 <div className="md:col-span-2 pt-2">
-                  <p className="text-sm font-medium text-gray-800">In Case of Emergency</p>
-                  <p className="text-xs text-gray-500">Emergency contact details for this member.</p>
-                </div>
-                <div>
-                  <label htmlFor="create-member-emergency-number" className="block text-xs text-gray-500 mb-1">Emergency Number</label>
-                  <input
-                    id="create-member-emergency-number"
-                    name="emergencyContactNumber"
-                     type="tel"
-                     placeholder="Emergency Contact Number"
-                     value={newMember.emergencyContactNumber}
-                     onChange={e => setNewMember({ ...newMember, emergencyContactNumber: e.target.value })}
-                     className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                     autoComplete="tel"
-                   />
-                 </div>
-                 <div>
-                  <label htmlFor="create-member-emergency-name" className="block text-xs text-gray-500 mb-1">Emergency Contact Name</label>
-                  <input
-                    id="create-member-emergency-name"
-                    name="emergencyContactName"
-                     type="text"
-                     placeholder="Emergency Contact Name"
-                     value={newMember.emergencyContactName}
-                     onChange={e => setNewMember({ ...newMember, emergencyContactName: e.target.value })}
-                     className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                     autoComplete="name"
-                   />
-                 </div>
-                 <div>
-                  <label htmlFor="create-member-emergency-relationship" className="block text-xs text-gray-500 mb-1">Relationship</label>
-                  <input
-                    id="create-member-emergency-relationship"
-                    name="emergencyContactRelationship"
-                     type="text"
-                     placeholder="Relationship"
-                     value={newMember.emergencyContactRelationship}
-                     onChange={e => setNewMember({ ...newMember, emergencyContactRelationship: e.target.value })}
-                     className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                     autoComplete="off"
-                   />
-                 </div>
-                 <div>
-                   <label htmlFor="create-member-blood-type" className="block text-xs text-gray-500 mb-1">Blood Type</label>
-                   <select
-                     id="create-member-blood-type"
-                   name="bloodType"
-                   value={newMember.bloodType}
-                   onChange={e => setNewMember({ ...newMember, bloodType: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                >
-                  <option value="">Select Blood Type</option>
-                  {BLOOD_TYPE_OPTIONS.map(type => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="create-member-status" className="block text-xs text-gray-500 mb-1">Status</label>
-                <select
-                  id="create-member-status"
-                  name="status"
-                  value={newMember.status}
-                  onChange={e => setNewMember({ ...newMember, status: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  required
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div>
-                <label htmlFor="create-member-role" className="block text-xs text-gray-500 mb-1">Type</label>
-                <select
-                  id="create-member-role"
-                  name="role"
-                  value={newMember.role}
-                  onChange={e => {
-                    const nextRole = e.target.value
-                    setNewMember(prev => {
-                      if (nextRole === 'admin') {
-                        return {
-                          ...prev,
-                          role: 'admin',
-                          committeeRole: 'Member',
-                          committee: '',
-                        }
-                      }
-                      if (nextRole === 'oic') {
-                        return {
-                          ...prev,
-                          role: 'oic',
-                          committeeRole: 'OIC',
-                          committee: '',
-                        }
-                      }
-                      return {
-                        ...prev,
-                        role: 'member',
-                        committeeRole: 'Member',
-                        committee: prev.committee || committeeOptions[0] || '',
-                      }
-                    })
-                  }}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  required
-                >
-                  {ROLE_OPTIONS.map(roleOption => (
-                    <option key={roleOption.value} value={roleOption.value}>
-                      {roleOption.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {newMember.role === 'member' ? (
-                <div>
-                  <label htmlFor="create-member-committee" className="block text-xs text-gray-500 mb-1">Committee</label>
-                  <select
-                    id="create-member-committee"
-                    name="committee"
-                    value={newMember.committee}
-                    onChange={e => setNewMember({ ...newMember, committee: e.target.value })}
-                    className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                    required
-                  >
-                    {committeeOptions.map(committee => (
-                      <option key={committee} value={committee}>
-                        {committee}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div />
-              )}
-              <div>
-                <label htmlFor="create-member-member-since" className="block text-xs text-gray-500 mb-1">Member Since</label>
-                <input
-                  id="create-member-member-since"
-                  name="memberSince"
-                  type="date"
-                  value={newMember.memberSince}
-                  onChange={e => setNewMember({ ...newMember, memberSince: e.target.value })}
-                  className="w-full h-10 rounded-lg border border-white/15 bg-white/5 px-3 text-white focus:outline-none focus:ring-2 focus:ring-yellow-300/35"
-                  autoComplete="off"
-                />
-              </div>
-              <button
-                type="submit"
-                className="md:col-span-2 inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:scale-[1.01] hover:bg-yellow-300"
-              >
-                {pendingApprovalRecruitmentId ? 'Approve & Create Account' : 'Create Member'}
-              </button>
-            </form>
-          </div>
-
-        </div>
-      )}
+      {/* Account creation moved to /members/create */}
 
       {isAdmin && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_20px_rgba(0,0,0,0.25)] backdrop-blur-md mb-6 animate-fade-in-up">
@@ -837,9 +433,7 @@ function Members() {
             </span>
           </div>
 
-          {recruitmentActionError && (
-            <p className="text-sm text-red-600 mb-3">{recruitmentActionError}</p>
-          )}
+
 
           <div className="space-y-3">
             {pendingRecruitments.length === 0 && (
@@ -1070,7 +664,7 @@ function Members() {
                 Delete selected
               </button>
             </div>
-            {bulkDeleteError ? <p className="mt-2 text-xs text-red-200">{bulkDeleteError}</p> : null}
+
           </div>
         </div>
       )}

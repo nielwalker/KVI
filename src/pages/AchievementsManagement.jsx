@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MapPin, Plus, Trash2, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useConfirm } from '../context/useConfirm'
+import { useToast } from '../context/useToast'
 import { supabase } from '../lib/supabaseClient'
 import dayjs from 'dayjs'
 
@@ -112,6 +113,7 @@ function AchievementImageGallery({ images, onDeleteImage }) {
 export default function AchievementsManagement() {
   const { user } = useAuth()
   const confirm = useConfirm()
+  const toast = useToast()
   const isAdmin = user?.role === 'admin'
 
   const [title, setTitle] = useState('')
@@ -123,6 +125,7 @@ export default function AchievementsManagement() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const lastToastRef = useRef({ error: '', success: '', editError: '' })
 
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -133,6 +136,27 @@ export default function AchievementsManagement() {
   const [editError, setEditError] = useState('')
   const [editFiles, setEditFiles] = useState([])
   const editInitIdRef = useRef(null)
+
+  useEffect(() => {
+    if (error && error !== lastToastRef.current.error) {
+      lastToastRef.current.error = error
+      toast.error(error, { title: 'Error' })
+    }
+  }, [error, toast])
+
+  useEffect(() => {
+    if (success && success !== lastToastRef.current.success) {
+      lastToastRef.current.success = success
+      toast.success(success, { title: 'Success' })
+    }
+  }, [success, toast])
+
+  useEffect(() => {
+    if (editError && editError !== lastToastRef.current.editError) {
+      lastToastRef.current.editError = editError
+      toast.error(editError, { title: 'Error' })
+    }
+  }, [editError, toast])
 
   const expandedItem = useMemo(() => {
     if (!expandedId) return null
@@ -595,21 +619,13 @@ export default function AchievementsManagement() {
         }}
       >
       <div
-        className="relative mb-6 overflow-hidden rounded-3xl border border-white/15 p-1 shadow-[0_24px_70px_rgba(8,47,73,0.26)]"
+        className="relative mb-6 overflow-hidden rounded-[22px] border border-white/10 p-6 shadow-[0_24px_70px_rgba(8,47,73,0.26)] backdrop-blur-md md:p-8"
         style={{
-          background: 'linear-gradient(145deg, rgba(14,116,144,0.88), rgba(30,64,175,0.84) 52%, rgba(59,130,246,0.78))',
-          backdropFilter: 'blur(18px)',
+          background: 'linear-gradient(145deg, rgba(14,116,144,0.34), rgba(30,64,175,0.28) 52%, rgba(96,165,250,0.24))',
         }}
       >
         <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-cyan-300/15 blur-3xl" />
         <div className="absolute -bottom-24 -left-20 h-64 w-64 rounded-full bg-blue-200/10 blur-3xl" />
-
-        <div
-          className="relative rounded-[22px] border border-white/10 p-6 backdrop-blur-md md:p-8"
-          style={{
-            background: 'linear-gradient(145deg, rgba(14,116,144,0.34), rgba(30,64,175,0.28) 52%, rgba(96,165,250,0.24))',
-          }}
-        >
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-[32px] font-semibold leading-tight text-white">Achievements</h2>
@@ -628,7 +644,6 @@ export default function AchievementsManagement() {
             </button>
           </div>
         </div>
-      </div>
 
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
           <form
@@ -653,16 +668,7 @@ export default function AchievementsManagement() {
               </button>
             </div>
 
-            {error ? (
-              <div className="mb-4 rounded-xl border border-red-300/35 bg-red-500/10 p-3 text-sm text-red-100">
-              {error}
-              </div>
-            ) : null}
-            {success ? (
-              <div className="mb-4 rounded-xl border border-emerald-300/35 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-              {success}
-              </div>
-            ) : null}
+
 
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <div className="md:col-span-2">
@@ -851,11 +857,7 @@ export default function AchievementsManagement() {
 
             <div className="calendar-done-modal-body max-h-[75vh] overflow-y-auto p-5 sm:p-6">
               <div className="calendar-done-card rounded-2xl border border-gray-200 bg-gray-50 p-4">
-                {editError ? (
-                  <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                    {editError}
-                  </div>
-                ) : null}
+
 
                 <div className="grid gap-3 md:grid-cols-2">
                   <label className="text-sm font-medium text-gray-700">
@@ -944,7 +946,7 @@ export default function AchievementsManagement() {
                     />
                   </div>
 
-                {editFilePreviews.length > 0 ? (
+                  {editFilePreviews.length > 0 ? (
                     <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
                       {editFilePreviews.map((entry) => (
                         <div

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { User, Mail, ArrowLeft, Send, Phone, MapPin, Droplets, Shield, Calendar } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/useToast'
 
 const LANDING_THEME = {
   navy: '#1e40af',
@@ -12,6 +13,8 @@ const LANDING_THEME = {
 function Recruitment() {
   const navigate = useNavigate()
   const { submitRecruitmentApplication } = useAuth()
+  const toast = useToast()
+  const lastToastRef = useRef({ error: '', success: '' })
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -27,6 +30,20 @@ function Recruitment() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (error && error !== lastToastRef.current.error) {
+      lastToastRef.current.error = error
+      toast.error(error, { title: 'Error' })
+    }
+  }, [error, toast])
+
+  useEffect(() => {
+    if (success && success !== lastToastRef.current.success) {
+      lastToastRef.current.success = success
+      toast.success(success, { title: 'Success' })
+    }
+  }, [success, toast])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -124,8 +141,7 @@ function Recruitment() {
         </div>
 
         <form onSubmit={handleSubmit} className="calendar-done-modal-body p-4 sm:p-6 space-y-5">
-          {error && <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</p>}
-          {success && <p className="rounded-xl border border-green-200 bg-green-50 p-3 text-sm text-green-700">{success}</p>}
+
 
           <div className="calendar-done-card rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5 space-y-4">
             <h4 className="text-sm font-semibold uppercase tracking-wide text-gray-800">Applicant Details</h4>

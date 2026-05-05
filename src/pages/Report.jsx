@@ -14,6 +14,7 @@ import {
 	  PieChart,
 	} from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../context/useToast'
 import { fetchSupabaseEvents, invalidateSupabaseEventsCache, isSupabaseEnabled } from '../lib/supabaseEvents'
 import { supabase } from '../lib/supabaseClient'
 
@@ -295,6 +296,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
 	function Report() {
   const { user, categories } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
   const supabaseEnabled = isSupabaseEnabled()
 	  const [events, setEvents] = useState([])
 		  const [typedStats, setTypedStats] = useState({ loading: false, error: '', byCategory: {} })
@@ -1057,16 +1059,15 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
       if (type === 'pdf') await downloadPdf()
       if (type === 'doc') await downloadDoc()
     } catch (error) {
-      alert(error?.message || 'Failed to generate export.')
+      toast.error(error?.message || 'Failed to generate export.', { title: 'Error' })
     } finally {
       setExportingType('')
-	    }
-	  }
+    }
+  }
 
   return (
     <div className="animate-fade-in space-y-6 max-w-7xl 2xl:max-w-[1500px] mx-auto text-white">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_12px_30px_rgba(0,0,0,0.25)] backdrop-blur-md">
-	        <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_10px_20px_rgba(0,0,0,0.25)] backdrop-blur-md">
 	        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
 	          <div className="flex items-center gap-2">
 	            <Filter size={18} className="text-yellow-300" />
@@ -1105,7 +1106,6 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
 	              className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white backdrop-blur-md focus:border-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-400/40 disabled:opacity-60"
 	            />
 	          </div>
-	        </div>
 	        </div>
       </div>
 
