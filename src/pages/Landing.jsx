@@ -1058,6 +1058,19 @@ function Landing() {
 
   useEffect(() => {
     if (!selectedNewsItem) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setSelectedNewsItem(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+    }
   }, [selectedNewsItem])
 
   // Ensure landing counters are fetched from the database directly on first load so
@@ -1123,6 +1136,8 @@ function Landing() {
     }
   }, [supabaseEnabled])
 
+  useEffect(() => {
+    if (!selectedNewsItem) return undefined
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
