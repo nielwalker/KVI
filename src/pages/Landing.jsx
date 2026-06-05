@@ -978,9 +978,14 @@ function Landing() {
 
   const loadLandingCountsFromApi = async () => {
     try {
-      const response = await fetch('/api/landing-counts')
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000)
+      
+      const response = await fetch('/api/landing-counts', { signal: controller.signal })
+      clearTimeout(timeoutId)
+      
       if (!response.ok) {
-        throw new Error(`Landing counts API returned ${response.status}`)
+        return null
       }
       const payload = await response.json()
       return {

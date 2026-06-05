@@ -4,20 +4,34 @@ import { createClient } from '@supabase/supabase-js'
 const parseEnv = (value) => String(value || '').trim()
 
 export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,HEAD')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end()
+  }
+
   const supabaseUrl = parseEnv(process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL)
   const serviceRoleKey = parseEnv(process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const anonKey = parseEnv(process.env.VITE_SUPABASE_ANON_KEY)
+  const key = serviceRoleKey || anonKey
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    return res.status(500).json({
-      message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.',
+  if (!supabaseUrl || !key) {
+    return res.status(503).json({
+      volunteerCount: 0,
+      committeeCount: 0,
+      activityCount: 0,
     })
   }
 
-  const supabase = createClient(supabaseUrl, serviceRoleKey, {
-    auth: { persistSession: false },
-  })
-
   try {
+    const supabase = createClient(supabaseUrl, key, {
+      auth: { persistSession: false },
+    })
+
     const [volunteers, committees, eventsDone, achievements] = await Promise.all([
       supabase.from('profiles').select('id', { head: true, count: 'exact' }).neq('name', ''),
       supabase.from('committees').select('id', { head: true, count: 'exact' }),
@@ -37,9 +51,11 @@ export default async function handler(req, res) {
       activityCount,
     })
   } catch (error) {
-    console.error('Landing counts API error:', error)
-    return res.status(500).json({
-      message: 'Unable to load landing counts.',
+    // Graceful degradation - return defaults on error
+    return res.status(200).json({
+      volunteerCount: 0,
+      committeeCount: 0,
+      activityCount: 0,
     })
   }
 }

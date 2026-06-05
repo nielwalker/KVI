@@ -116,10 +116,10 @@ function MemberRoute({ children }) {
 
 // Public Route - Redirects to dashboard if already logged in
 function PublicRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading, authResolved } = useAuth()
 
-  if (user?.role && !loading) {
-    return <Navigate to="/" replace />
+  if (authResolved && user?.role && !loading) {
+    return <Navigate to="/app" replace />
   }
 
   return children
