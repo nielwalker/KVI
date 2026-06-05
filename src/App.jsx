@@ -64,6 +64,10 @@ function AuthPendingState({ title = 'Loading your session...' }) {
   )
 }
 
+function SuspenseFallback() {
+  return <AuthPendingState title="Loading…" />
+}
+
 function ProtectedRoute({ children }) {
   const { user, authResolved, loading } = useAuth()
 
@@ -133,7 +137,7 @@ function ChatbotGate() {
 
 function AppRoutes() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+    <Suspense fallback={<SuspenseFallback />}>
       <Routes>
       {/* Public Routes */}
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
