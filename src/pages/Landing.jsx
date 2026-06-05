@@ -833,6 +833,7 @@ function Landing() {
   const [donationSubmitError, setDonationSubmitError] = useState('')
   const [publicCommittees, setPublicCommittees] = useState([])
   const [publicCommitteesLoaded, setPublicCommitteesLoaded] = useState(false)
+  const [publicCommitteeCount, setPublicCommitteeCount] = useState(null)
   const [publicVolunteerCount, setPublicVolunteerCount] = useState(null)
   const [committeeDragging, setCommitteeDragging] = useState(false)
   const [completedActivityCount, setCompletedActivityCount] = useState(0)
@@ -976,18 +977,36 @@ function Landing() {
   }
 
   const loadCompletedActivities = async () => {
-    let cachedEvents = getSupabaseEventsCache()
-    if (cachedEvents.length === 0 && supabaseEnabled && supabase) {
-      await fetchSupabaseEvents({ force: true })
-      cachedEvents = getSupabaseEventsCache()
+    if (!supabaseEnabled || !supabase) {
+      setCompletedActivityCount(0)
+      setCompletedActivitiesLoading(false)
+      return
     }
 
-    const count = (Array.isArray(cachedEvents) ? cachedEvents : [])
-      .filter(event => String(event?.status || '').trim().toLowerCase() === 'done')
-      .length
+    try {
+      const { count, error } = await supabase
+        .from('events')
+        .select('id', { head: true, count: 'exact' })
+        .eq('status', 'done')
 
-    setCompletedActivityCount(count)
-    setCompletedActivitiesLoading(false)
+      if (!error && typeof count === 'number') {
+        setCompletedActivityCount(Number(count))
+      } else {
+        const { count: fallbackCount, error: fallbackError } = await supabase
+          .from('achievements')
+          .select('id', { head: true, count: 'exact' })
+
+        if (!fallbackError && typeof fallbackCount === 'number') {
+          setCompletedActivityCount(Number(fallbackCount))
+        } else {
+          setCompletedActivityCount(0)
+        }
+      }
+    } catch {
+      setCompletedActivityCount(0)
+    } finally {
+      setCompletedActivitiesLoading(false)
+    }
   }
 
   const selectedNewsImages = useMemo(() => {
@@ -1096,6 +1115,7 @@ function Landing() {
           .from('committees')
           .select('id', { head: true, count: 'exact' })
         if (!commError && typeof commCount === 'number' && active) {
+          setPublicCommitteeCount(Number(commCount))
           setPublicCommittees((prev) => {
             // if we already loaded committees array, keep it; otherwise set a placeholder array sized by count
             if (Array.isArray(prev) && prev.length > 0) return prev
@@ -1319,11 +1339,9 @@ function Landing() {
   }, [getAdmins, getAllMembers])
 
   const stats = useMemo(() => {
-    const committeeValue = supabaseEnabled && !publicCommitteesLoaded ? '...' : String(savedCommitteeCount)
-    const volunteerCount =
-      typeof publicVolunteerCount === 'number'
-        ? Math.max(publicVolunteerCount, savedVolunteerCount)
-        : savedVolunteerCount
+    const committeeCount = typeof publicCommitteeCount === 'number' ? publicCommitteeCount : savedCommitteeCount
+    const committeeValue = supabaseEnabled && publicCommitteeCount === null && !publicCommitteesLoaded ? '...' : String(committeeCount)
+    const volunteerCount = typeof publicVolunteerCount === 'number' ? publicVolunteerCount : savedVolunteerCount
     const volunteerValue = supabaseEnabled && publicVolunteerCount === null && volunteerCount === 0 ? '...' : String(volunteerCount)
     const activityValue = supabaseEnabled && completedActivitiesLoading && completedActivityCount === 0 ? '...' : String(completedActivityCount)
     const yearsActiveValue = String(getYearsActive())
@@ -1334,8 +1352,7 @@ function Landing() {
       { label: 'Committees', value: committeeValue, icon: LayoutGrid },
       { label: 'Years Active', value: yearsActiveValue, icon: CalendarDays },
     ]
-  }, [completedActivityCount, completedActivitiesLoading, publicCommitteesLoaded, publicVolunteerCount, savedCommitteeCount, savedVolunteerCount, supabaseEnabled])
-
+  }, [completedActivityCount, completedActivitiesLoading, publicCommitteesLoaded, publicCommitteeCount, publicVolunteerCount, savedCommitteeCount, savedVolunteerCount, supabaseEnabled])
   const contextMemberPeople = useMemo(() => {
     const members = getAllMembers ? getAllMembers() : []
     const admins = getAdmins ? getAdmins() : []
@@ -1435,7 +1452,7 @@ function Landing() {
         if (isMounted) {
           const people = normalizePeople(data)
           setKusganVolunteerPeople(people)
-          setPublicVolunteerCount(people.length)
+          setPublicVolunteerCount((current) => (current === null ? people.length : current))
           landingMembersLoadedRef.current = true
           setLandingMembersLoading(false)
         }
