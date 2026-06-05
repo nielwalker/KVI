@@ -1058,6 +1058,71 @@ function Landing() {
 
   useEffect(() => {
     if (!selectedNewsItem) return undefined
+  }, [selectedNewsItem])
+
+  // Ensure landing counters are fetched from the database directly on first load so
+  // a brand-new device (no cache) sees the up-to-date numbers.
+  useEffect(() => {
+    let active = true
+
+    const loadLandingCounts = async () => {
+      if (!supabaseEnabled || !supabase) return
+
+      try {
+        // Volunteers: count profiles with a non-empty name
+        const { count: volCount, error: volError } = await supabase
+          .from('profiles')
+          .select('id', { head: true, count: 'exact' })
+          .neq('name', '')
+        if (!volError && typeof volCount === 'number' && active) {
+          setPublicVolunteerCount(Number(volCount))
+        }
+
+        // Committees: count rows in committees table
+        const { count: commCount, error: commError } = await supabase
+          .from('committees')
+          .select('id', { head: true, count: 'exact' })
+        if (!commError && typeof commCount === 'number' && active) {
+          setPublicCommittees((prev) => {
+            // if we already loaded committees array, keep it; otherwise set a placeholder array sized by count
+            if (Array.isArray(prev) && prev.length > 0) return prev
+            return Array.from({ length: Number(commCount) }).map((_, i) => `Committee ${i + 1}`)
+          })
+          setPublicCommitteesLoaded(true)
+        }
+
+        // Activities: count events marked done in events table (fallback to achievements if events absent)
+        // Try events table first
+        const { count: eventDoneCount, error: eventErr } = await supabase
+          .from('events')
+          .select('id', { head: true, count: 'exact' })
+          .eq('status', 'done')
+        if (!eventErr && typeof eventDoneCount === 'number' && active) {
+          setCompletedActivityCount(Number(eventDoneCount))
+          setCompletedActivitiesLoading(false)
+        } else {
+          // Fallback: achievements table
+          const { count: achCount, error: achErr } = await supabase
+            .from('achievements')
+            .select('id', { head: true, count: 'exact' })
+          if (!achErr && typeof achCount === 'number' && active) {
+            setCompletedActivityCount(Number(achCount))
+            setCompletedActivitiesLoading(false)
+          }
+        }
+      } catch (err) {
+        // ignore — existing load logic will handle fallbacks
+        // console.warn('Failed to load landing counts directly:', err)
+      }
+    }
+
+    void loadLandingCounts()
+
+    return () => {
+      active = false
+    }
+  }, [supabaseEnabled])
+
 
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
