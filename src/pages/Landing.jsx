@@ -976,14 +976,44 @@ function Landing() {
     return []
   }
 
+  const loadLandingCountsFromApi = async () => {
+    try {
+      const response = await fetch('/api/landing-counts')
+      if (!response.ok) {
+        throw new Error(`Landing counts API returned ${response.status}`)
+      }
+      const payload = await response.json()
+      return {
+        volunteerCount: Number(payload?.volunteerCount || 0),
+        committeeCount: Number(payload?.committeeCount || 0),
+        activityCount: Number(payload?.activityCount || 0),
+      }
+    } catch {
+      return null
+    }
+  }
+
   const loadCompletedActivities = async () => {
-    if (!supabaseEnabled || !supabase) {
+    if (!supabaseEnabled) {
       setCompletedActivityCount(0)
       setCompletedActivitiesLoading(false)
       return
     }
 
     try {
+      const apiCounts = await loadLandingCountsFromApi()
+      if (apiCounts) {
+        setPublicVolunteerCount((current) => (current === null ? apiCounts.volunteerCount : current))
+        setPublicCommitteeCount((current) => (current === null ? apiCounts.committeeCount : current))
+        setCompletedActivityCount(apiCounts.activityCount)
+        return
+      }
+
+      if (!supabase) {
+        setCompletedActivityCount(0)
+        return
+      }
+
       const { count, error } = await supabase
         .from('events')
         .select('id', { head: true, count: 'exact' })
@@ -1098,6 +1128,15 @@ function Landing() {
     let active = true
 
     const loadLandingCounts = async () => {
+      const apiCounts = await loadLandingCountsFromApi()
+      if (apiCounts && active) {
+        setPublicVolunteerCount((current) => (current === null ? apiCounts.volunteerCount : current))
+        setPublicCommitteeCount((current) => (current === null ? apiCounts.committeeCount : current))
+        setCompletedActivityCount(apiCounts.activityCount)
+        setCompletedActivitiesLoading(false)
+        return
+      }
+
       if (!supabaseEnabled || !supabase) return
 
       try {
@@ -1125,7 +1164,6 @@ function Landing() {
         }
 
         // Activities: count events marked done in events table (fallback to achievements if events absent)
-        // Try events table first
         const { count: eventDoneCount, error: eventErr } = await supabase
           .from('events')
           .select('id', { head: true, count: 'exact' })
@@ -1134,7 +1172,6 @@ function Landing() {
           setCompletedActivityCount(Number(eventDoneCount))
           setCompletedActivitiesLoading(false)
         } else {
-          // Fallback: achievements table
           const { count: achCount, error: achErr } = await supabase
             .from('achievements')
             .select('id', { head: true, count: 'exact' })
@@ -1143,9 +1180,8 @@ function Landing() {
             setCompletedActivitiesLoading(false)
           }
         }
-      } catch (err) {
+      } catch {
         // ignore — existing load logic will handle fallbacks
-        // console.warn('Failed to load landing counts directly:', err)
       }
     }
 
