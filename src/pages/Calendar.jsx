@@ -234,6 +234,72 @@ const CREATE_CATEGORY_KEYS = [
   'water_distribution',
 ]
 
+const OPERATION_KEY_ALIASES = {
+  relief_operations: 'relief_operation',
+  fire_responses: 'fire_response',
+  water_distributions: 'water_distribution',
+  blood_lettings: 'blood_letting',
+}
+
+const canonicalizeOperationKey = key => OPERATION_KEY_ALIASES[key] || key
+
+const normalizeCategoryKey = value =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+
+const titleCaseFromKey = key =>
+  String(key || '')
+    .trim()
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replace(/[_-]+/g, ' ')
+
+const parseCategoryQueryKey = value => {
+  const key = normalizeCategoryKey(value)
+  if (!key) return 'all'
+  return canonicalizeOperationKey(key)
+}
+
+const splitPipe = value =>
+  String(value || '')
+    .split('|')
+    .map(item => item.trim())
+    .filter(Boolean)
+
+const ALL_MONTHS = [
+  { key: '01', label: 'January' },
+  { key: '02', label: 'February' },
+  { key: '03', label: 'March' },
+  { key: '04', label: 'April' },
+  { key: '05', label: 'May' },
+  { key: '06', label: 'June' },
+  { key: '07', label: 'July' },
+  { key: '08', label: 'August' },
+  { key: '09', label: 'September' },
+  { key: '10', label: 'October' },
+  { key: '11', label: 'November' },
+  { key: '12', label: 'December' },
+]
+
+const getDefaultDynamicFields = () => {
+  const defaults = {}
+  CATEGORY_KEYS.forEach(key => {
+    defaults[key] = {}
+  })
+  return defaults
+}
+
+const getEventMatchKey = event => {
+  const baseId = event?.id
+  if (baseId !== undefined && baseId !== null && String(baseId).trim()) return `id:${baseId}`
+  const dateValue = event?.dateTime || event?.date || ''
+  const title = event?.title || ''
+  const category = event?.category || ''
+  return `fallback:${dateValue}|${title}|${category}`
+}
+
 const CATEGORY_META = {
   tuli: { icon: HeartPulse, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
   // `EventLocationPicker` moved to `src/components/calendar/EventLocationPicker.jsx` and is lazy-loaded.
