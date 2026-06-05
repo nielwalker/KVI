@@ -1,5 +1,5 @@
 
-import { useId, useMemo, useState, useEffect, useRef } from 'react'
+import React, { useId, useMemo, useState, useEffect, useRef, lazy, Suspense } from 'react'
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -39,6 +39,10 @@ import {
   setSupabaseEventsCache,
   updateSupabaseEvent,
 } from '../lib/supabaseEvents'
+// Lazy-load heavy calendar subcomponents to reduce initial page bundle size
+const ReadOnlyEventMap = lazy(() => import('../components/calendar/ReadOnlyEventMap'))
+const EventLocationPicker = lazy(() => import('../components/calendar/EventLocationPicker'))
+const AssignMembersPicker = lazy(() => import('../components/calendar/AssignMembersPicker'))
 import { insertAssignmentNotifications } from '../lib/supabaseNotifications'
 import { buildActivityValueRow } from '../lib/activityValues'
 
@@ -232,638 +236,26 @@ const CREATE_CATEGORY_KEYS = [
 
 const CATEGORY_META = {
   tuli: { icon: HeartPulse, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  blood_letting: { icon: Activity, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  donations: { icon: FileText, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  environmental: { icon: Leaf, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  relief_operation: { icon: Activity, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  fire_response: { icon: Flame, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  water_distribution: { icon: Droplets, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  notes: { icon: FileText, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-  medical: { icon: HeartPulse, iconClass: '', bg: 'from-yellow-50 to-yellow-100', text: 'text-yellow-700' },
-}
-
-const getDefaultDynamicFields = () =>
-  CATEGORY_KEYS.reduce((acc, categoryKey) => {
-    const fields = CATEGORY_CONFIG[categoryKey].fields
-    acc[categoryKey] = fields.reduce((fieldAcc, field) => {
-      if (field.type === 'list_text' || field.type === 'list_select') {
-        return { ...fieldAcc, [field.key]: [''] }
-      }
-      return { ...fieldAcc, [field.key]: '' }
-    }, {})
-    return acc
-  }, {})
-
-const ALL_MONTHS = [
-  { key: '01', label: 'January' },
-  { key: '02', label: 'February' },
-  { key: '03', label: 'March' },
-  { key: '04', label: 'April' },
-  { key: '05', label: 'May' },
-  { key: '06', label: 'June' },
-  { key: '07', label: 'July' },
-  { key: '08', label: 'August' },
-  { key: '09', label: 'September' },
-  { key: '10', label: 'October' },
-  { key: '11', label: 'November' },
-  { key: '12', label: 'December' },
-]
-
-const getCategoryKeyFromLabel = label => {
-  const normalized = String(label || '').trim().toLowerCase()
-  if (CATEGORY_CONFIG[normalized]) return normalized
-  const exact = CATEGORY_KEYS.find(key => CATEGORY_CONFIG[key].label.toLowerCase() === normalized)
-  return exact || null
-}
-
-const normalizeCategoryKey = value =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-
-const OPERATION_KEY_ALIASES = {
-  relief_operations: 'relief_operation',
-  fire_responses: 'fire_response',
-  water_distributions: 'water_distribution',
-  blood_lettings: 'blood_letting',
-}
-
-const canonicalizeOperationKey = key => OPERATION_KEY_ALIASES[key] || key
-
-const titleCaseFromKey = key =>
-  String(key || '')
-    .trim()
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .toUpperCase()
-
-const parseCategoryQueryKey = value => {
-  const raw = String(value || '').trim()
-  if (!raw) return 'all'
-  const lowered = raw.toLowerCase()
-  if (lowered === 'all') return 'all'
-  if (CATEGORY_CONFIG[lowered]) return lowered
-  const fromLabel = getCategoryKeyFromLabel(raw)
-  if (fromLabel) return fromLabel
-  return canonicalizeOperationKey(normalizeCategoryKey(raw)) || 'all'
-}
-
-let leafletLoaderPromise = null
-
-const loadLeaflet = () => {
-  if (typeof window === 'undefined') return Promise.resolve(null)
-  if (window.L) return Promise.resolve(window.L)
-  if (leafletLoaderPromise) return leafletLoaderPromise
-
-  leafletLoaderPromise = new Promise((resolve, reject) => {
-    if (!document.getElementById('leaflet-css-cdn')) {
-      const link = document.createElement('link')
-      link.id = 'leaflet-css-cdn'
-      link.rel = 'stylesheet'
-      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-      document.head.appendChild(link)
-    }
-
-    const scriptExisting = document.getElementById('leaflet-js-cdn')
-    if (scriptExisting && window.L) {
-      resolve(window.L)
-      return
-    }
-
-    if (!scriptExisting) {
-      const script = document.createElement('script')
-      script.id = 'leaflet-js-cdn'
-      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-      script.async = true
-      script.onload = () => resolve(window.L)
-      script.onerror = () => reject(new Error('Failed to load Leaflet'))
-      document.body.appendChild(script)
-      return
-    }
-
-    scriptExisting.addEventListener('load', () => resolve(window.L))
-    scriptExisting.addEventListener('error', () => reject(new Error('Failed to load Leaflet')))
-  })
-
-  return leafletLoaderPromise
-}
-
-const geocodeAddress = async (query, signal) => {
-  const PHILIPPINES_VIEWBOX = '116.8,21.3,126.6,4.5'
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=ph&bounded=1&viewbox=${PHILIPPINES_VIEWBOX}&q=${encodeURIComponent(query)}`,
-    { signal }
-  )
-  if (!response.ok) throw new Error('Address search failed')
-  const data = await response.json()
-  return Array.isArray(data) ? data : []
-}
-
-const reverseGeocode = async (lat, lng) => {
-  const response = await fetch(
-    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
-  )
-  if (!response.ok) throw new Error('Reverse geocode failed')
-  const data = await response.json()
-  return data?.display_name || ''
-}
-
-const getSearchZoom = (query, selected = false) => {
-  if (selected) return 16
-  const normalized = query.trim()
-  if (normalized.length >= 24) return 14
-  if (normalized.length >= 12) return 13
-  return 11
-}
-
-const splitPipe = value =>
-  String(value || '')
-    .split('|')
-    .map(item => item.trim())
-    .filter(Boolean)
-
-const getEventMatchKey = event => {
-  const baseId = event?.id
-  if (baseId !== undefined && baseId !== null && String(baseId).trim()) return `id:${baseId}`
-  const dateValue = event?.dateTime || event?.date || ''
-  const title = event?.title || ''
-  const category = event?.category || ''
-  return `fallback:${dateValue}|${title}|${category}`
-}
-
-const _buildAssignmentNotification = (memberId, event, actorName) => ({
-  id: `${Date.now()}-${memberId}-${Math.floor(Math.random() * 1000)}`,
-  type: 'assignment',
-  userId: memberId,
-  eventId: event?.id ?? null,
-  eventKey: getEventMatchKey(event),
-  title: event?.title || 'Untitled Event',
-  category: event?.category || 'notes',
-  dateTime: event?.dateTime || event?.date || '',
-  details: [event?.content, event?.address].filter(Boolean).join(' • '),
-  assignedBy: actorName || 'Admin',
-  createdAt: dayjs().toISOString(),
-  readAt: null,
-})
-
-function EventLocationPicker({ address, location, onAddressInput, onLocationSelect }) {
-  const [suggestions, setSuggestions] = useState([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [mapError, setMapError] = useState('')
-  const [searchHint, setSearchHint] = useState('')
-  const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
-  const markerRef = useRef(null)
-  const leafletRef = useRef(null)
-  const addressRef = useRef(address)
-  const onLocationSelectRef = useRef(onLocationSelect)
-  const initialLocationRef = useRef(location)
-
-  useEffect(() => {
-    addressRef.current = address
-  }, [address])
-
-  useEffect(() => {
-    onLocationSelectRef.current = onLocationSelect
-  }, [onLocationSelect])
-
-  useEffect(() => {
-    let active = true
-
-    const initializeMap = async () => {
-      try {
-        const L = await loadLeaflet()
-        if (!active || !L || !mapContainerRef.current || mapRef.current) return
-	        leafletRef.current = L
-	
-	        const initialLocation = initialLocationRef.current
-	        const defaultCenter = initialLocation || { lat: 12.8797, lng: 121.774 }
-	        const map = L.map(mapContainerRef.current, {
-	          center: [defaultCenter.lat, defaultCenter.lng],
-	          zoom: initialLocation ? 15 : 6,
-	        })
-
-        map.getContainer().style.zIndex = '0'
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map)
-
-        if (initialLocation) {
-          markerRef.current = L.marker([initialLocation.lat, initialLocation.lng]).addTo(map)
-        }
-
-        map.on('click', async e => {
-          const nextLocation = { lat: Number(e.latlng.lat.toFixed(6)), lng: Number(e.latlng.lng.toFixed(6)) }
-          if (markerRef.current) {
-            markerRef.current.setLatLng([nextLocation.lat, nextLocation.lng])
-          } else {
-            markerRef.current = L.marker([nextLocation.lat, nextLocation.lng]).addTo(map)
-          }
-          map.setView([nextLocation.lat, nextLocation.lng], Math.max(15, map.getZoom()))
-
-          let resolvedAddress = addressRef.current
-          try {
-            resolvedAddress = await reverseGeocode(nextLocation.lat, nextLocation.lng)
-          } catch {
-            resolvedAddress = addressRef.current || `${nextLocation.lat}, ${nextLocation.lng}`
-          }
-          onLocationSelectRef.current?.({ address: resolvedAddress, location: nextLocation })
-        })
-
-        mapRef.current = map
-      } catch {
-        if (active) setMapError('Map unavailable. Check network connection.')
-      }
-    }
-
-    initializeMap()
-
-    return () => {
-      active = false
-      if (mapRef.current) {
-        try {
-          mapRef.current.remove()
-        } catch {
-          // ignore leaflet cleanup errors (can happen if container unmounted mid-cleanup)
-        }
-        mapRef.current = null
-      }
-      markerRef.current = null
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!mapRef.current || !leafletRef.current) return
-    if (!location) {
-      if (markerRef.current) {
-        mapRef.current.removeLayer(markerRef.current)
-        markerRef.current = null
-      }
-      return
-    }
-
-    if (markerRef.current) {
-      markerRef.current.setLatLng([location.lat, location.lng])
-    } else {
-      markerRef.current = leafletRef.current.marker([location.lat, location.lng]).addTo(mapRef.current)
-    }
-    mapRef.current.flyTo([location.lat, location.lng], Math.max(15, mapRef.current.getZoom()), { duration: 0.45 })
-  }, [location])
-
-  useEffect(() => {
-    const query = address.trim()
-    if (query.length < 3) {
-      setSuggestions([])
-      setIsSearching(false)
-      setSearchHint('')
-      setActiveSuggestionIndex(-1)
-      return
-    }
-
-    const controller = new AbortController()
-    const timer = setTimeout(async () => {
-      try {
-        setIsSearching(true)
-        const results = await geocodeAddress(query, controller.signal)
-        if (controller.signal.aborted) return
-
-        setSuggestions(results)
-        setActiveSuggestionIndex(results.length > 0 ? 0 : -1)
-        if (results.length === 0) {
-          setSearchHint('No results found. Try a more specific address.')
-          if (!location && mapRef.current && markerRef.current) {
-            mapRef.current.removeLayer(markerRef.current)
-            markerRef.current = null
-          }
-          return
-        }
-
-        setSearchHint('Select a suggestion or press Enter to confirm location.')
-        if (mapRef.current) {
-          const first = results[0]
-          const previewLat = Number(first.lat)
-          const previewLng = Number(first.lon)
-          mapRef.current.flyTo([previewLat, previewLng], getSearchZoom(query), { duration: 0.4 })
-        }
-      } catch {
-        if (!controller.signal.aborted) {
-          setSuggestions([])
-          setSearchHint('Unable to search location right now.')
-        }
-      } finally {
-        if (!controller.signal.aborted) setIsSearching(false)
-      }
-    }, 350)
-
-    return () => {
-      controller.abort()
-      clearTimeout(timer)
-    }
-  }, [address, location])
-
-  const selectSuggestion = item => {
-    const nextLocation = { lat: Number(item.lat), lng: Number(item.lon) }
-    onLocationSelect({ address: item.display_name, location: nextLocation })
-    setShowSuggestions(false)
-    setSuggestions([])
-    setSearchHint('')
-    setActiveSuggestionIndex(-1)
-    if (mapRef.current) {
-      mapRef.current.flyTo([nextLocation.lat, nextLocation.lng], getSearchZoom(item.display_name, true), {
-        duration: 0.45,
-      })
-    }
+  // `EventLocationPicker` moved to `src/components/calendar/EventLocationPicker.jsx` and is lazy-loaded.
+    // Removed location selection logic
+    // const nextLocation = { lat: Number(item.lat), lng: Number(item.lon) }
+    // onLocationSelect({ address: item.display_name, location: nextLocation })
+    // setShowSuggestions(false)
+    // setSuggestions([])
+    // setSearchHint('')
+    // setActiveSuggestionIndex(-1)
+    // if (mapRef.current) {
+    //   mapRef.current.flyTo([nextLocation.lat, nextLocation.lng], getSearchZoom(item.display_name, true), {
+    //     duration: 0.45,
+    //   })
+    // }
   }
 
-  const renderHighlightedAddress = (fullText, query) => {
-    const q = query.trim()
-    if (!q) return fullText
-    const safeQuery = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const regex = new RegExp(`(${safeQuery})`, 'ig')
-    const parts = fullText.split(regex)
-    return parts.map((part, index) =>
-      index % 2 === 1 ? (
-        <mark key={`${part}-${index}`} className="bg-red-100 text-red-700 px-0.5 rounded">
-          {part}
-        </mark>
-      ) : (
-        <span key={`${part}-${index}`}>{part}</span>
-      )
-    )
-  }
+  
 
-  return (
-    <div className="space-y-3">
-      <div className="relative">
-        <label htmlFor="event-location-address" className="block text-sm text-white/80 mb-2">Address</label>
-        <div className="relative">
-          <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-600" />
-          <input
-            id="event-location-address"
-            name="address"
-            type="text"
-            value={address}
-            onChange={e => {
-              onAddressInput(e.target.value)
-              setShowSuggestions(true)
-              setActiveSuggestionIndex(-1)
-            }}
-            onFocus={() => setShowSuggestions(true)}
-            onKeyDown={e => {
-              if (!showSuggestions) return
+// `ReadOnlyEventMap` moved to `src/components/calendar/ReadOnlyEventMap.jsx` and is lazy-loaded.
 
-              if (e.key === 'ArrowDown' && suggestions.length > 0) {
-                e.preventDefault()
-                setActiveSuggestionIndex(prev => (prev + 1) % suggestions.length)
-                return
-              }
-
-              if (e.key === 'ArrowUp' && suggestions.length > 0) {
-                e.preventDefault()
-                setActiveSuggestionIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1))
-                return
-              }
-
-              if (e.key === 'Escape') {
-                setShowSuggestions(false)
-                return
-              }
-
-              if (e.key === 'Enter' && suggestions.length > 0) {
-                e.preventDefault()
-                const selected = suggestions[activeSuggestionIndex >= 0 ? activeSuggestionIndex : 0]
-                selectSuggestion(selected)
-              }
-            }}
-            placeholder="Search address"
-            className="w-full rounded-lg border border-white/20 bg-white/10 pl-10 pr-4 py-3 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-red-500"
-            required
-            autoComplete="street-address"
-          />
-          {isSearching && <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-yellow-600" />}
-        </div>
-        {showSuggestions && (isSearching || suggestions.length > 0 || searchHint) && (
-          <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
-            {isSearching && <p className="px-3 py-2 text-sm text-gray-500">Searching...</p>}
-            {!isSearching && suggestions.length === 0 && searchHint && (
-              <p className="px-3 py-2 text-sm text-gray-500">{searchHint}</p>
-            )}
-            {!isSearching &&
-              suggestions.map((item, index) => (
-                <button
-                  key={`${item.place_id}-${item.lat}-${item.lon}`}
-                  type="button"
-                  onMouseEnter={() => setActiveSuggestionIndex(index)}
-                  onClick={() => selectSuggestion(item)}
-                  className={`w-full border-b border-gray-100 px-3 py-2 text-left text-sm transition-colors last:border-b-0 ${
-                    activeSuggestionIndex === index ? 'bg-yellow-50 text-gray-900' : 'text-gray-800 hover:bg-gray-50'
-                  }`}
-                >
-                  {renderHighlightedAddress(item.display_name, address)}
-                </button>
-              ))}
-          </div>
-        )}
-      </div>
-
-<div className="relative isolate z-0 rounded-2xl border border-white/20 shadow-sm overflow-hidden">
-        <div ref={mapContainerRef} className="relative z-0 h-52 sm:h-64 md:h-72 w-full" />
-      </div>
-      {mapError && <p className="text-sm text-red-300">{mapError}</p>}
-      <p className="text-xs text-white/65">Type partial or full address. Press Enter or choose a suggestion to pin exactly.</p>
-    </div>
-  )
-}
-
-function ReadOnlyEventMap({ address, location }) {
-  const mapContainerRef = useRef(null)
-  const mapRef = useRef(null)
-  const markerRef = useRef(null)
-
-  useEffect(() => {
-    let active = true
-
-    const mountMap = async () => {
-      if (!address) return
-      try {
-        const L = await loadLeaflet()
-        if (!active || !L || !mapContainerRef.current || mapRef.current) return
-
-        let resolvedLocation = location
-        if (!resolvedLocation) {
-          const results = await geocodeAddress(address)
-          if (results.length > 0) {
-            resolvedLocation = { lat: Number(results[0].lat), lng: Number(results[0].lon) }
-          }
-        }
-        if (!resolvedLocation) return
-
-        const map = L.map(mapContainerRef.current, {
-          center: [resolvedLocation.lat, resolvedLocation.lng],
-          zoom: 15,
-          dragging: false,
-          scrollWheelZoom: false,
-          touchZoom: false,
-          doubleClickZoom: false,
-          boxZoom: false,
-          keyboard: false,
-          zoomControl: false,
-        })
-
-        map.getContainer().style.zIndex = '0'
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '&copy; OpenStreetMap contributors',
-          maxZoom: 19,
-        }).addTo(map)
-
-        markerRef.current = L.marker([resolvedLocation.lat, resolvedLocation.lng]).addTo(map)
-        mapRef.current = map
-
-        // Ensure proper tile/layout sizing after expand animation and responsive layout settle.
-        requestAnimationFrame(() => map.invalidateSize())
-        setTimeout(() => map.invalidateSize(), 220)
-      } catch {
-        // Leaflet can fail to initialize if the container isn't ready yet; ignore and let the next render retry.
-      }
-    }
-
-    mountMap()
-
-    return () => {
-      active = false
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-      markerRef.current = null
-    }
-  }, [address, location])
-
-  if (!address) return null
-
-  return (
-    <div className="relative isolate z-0 w-full rounded-xl border border-gray-200 shadow-sm overflow-hidden bg-white">
-      <div ref={mapContainerRef} className="relative z-0 w-full h-[280px] sm:h-[320px] md:h-[340px]" />
-    </div>
-  )
-}
-
-function AssignMembersPicker({ allMembers, selectedIds, onChange, label = 'Assign Members', placeholder = 'Search members by name, committee, or ID...' }) {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState(false)
-  const panelRef = useRef(null)
-  const inputRef = useRef(null)
-  const inputId = useId()
-
-  const filteredMembers = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return allMembers.filter(member => {
-      if (!q) return true
-      return (
-        member.name?.toLowerCase().includes(q) ||
-        member.committee?.toLowerCase().includes(q) ||
-        member.branch?.toLowerCase().includes(q) ||
-        member.idNumber?.toLowerCase().includes(q)
-      )
-    })
-  }, [allMembers, query])
-
-  const selectedMembers = useMemo(
-    () => allMembers.filter(member => selectedIds.includes(member.id)),
-    [allMembers, selectedIds]
-  )
-
-  useEffect(() => {
-    const onClickOutside = e => {
-      if (!panelRef.current?.contains(e.target)) setOpen(false)
-    }
-    window.addEventListener('mousedown', onClickOutside)
-    return () => window.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
-  const toggleMember = memberId => {
-    if (selectedIds.includes(memberId)) {
-      onChange(selectedIds.filter(id => id !== memberId))
-    } else {
-      onChange([...selectedIds, memberId])
-    }
-  }
-
-  return (
-    <div className="space-y-2" ref={panelRef}>
-      <label htmlFor={inputId} className="mb-2 block text-sm font-medium text-gray-700">{label}</label>
-      <div className="relative">
-        <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-yellow-600" />
-        <input
-          id={inputId}
-          name="memberSearch"
-          ref={inputRef}
-          type="text"
-          value={query}
-          onFocus={() => setOpen(true)}
-          onChange={e => {
-            setQuery(e.target.value)
-            setOpen(true)
-          }}
-          placeholder={placeholder}
-          className="w-full rounded-lg border border-gray-300 bg-white pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
-        />
-        {open && (
-          <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-lg">
-            {filteredMembers.length === 0 && (
-              <p className="px-3 py-2 text-sm text-gray-500">No members found.</p>
-            )}
-            {filteredMembers.map(member => {
-              const checked = selectedIds.includes(member.id)
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => toggleMember(member.id)}
-                  className={`flex w-full items-center justify-between border-b border-gray-100 px-3 py-2 text-left text-sm last:border-b-0 ${
-                    checked ? 'bg-yellow-50 text-gray-900' : 'text-gray-800 hover:bg-gray-50'
-                  }`}
-                >
-                  <span className="truncate pr-3">
-                    {member.name}
-                    <span className="ml-2 text-xs text-gray-500">
-                      {member.committee ? `${member.committee}` : ''}{member.branch ? ` / ${member.branch}` : ''}
-                    </span>
-                  </span>
-                  {checked && <Check size={14} className="text-yellow-600" />}
-                </button>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {selectedMembers.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {selectedMembers.map(member => (
-            <button
-              key={member.id}
-              type="button"
-              onClick={() => toggleMember(member.id)}
-              className="inline-flex items-center gap-2 rounded-full border border-red-700 bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700"
-            >
-              {member.name}
-              <X size={12} />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+// `AssignMembersPicker` moved to `src/components/calendar/AssignMembersPicker.jsx` and is lazy-loaded.
 
 function Calendar({ listOnly = false }) {
   const { user, getAllMembers, getAdmins, ensureAdminDataLoaded, categories } = useAuth()
@@ -2459,7 +1851,9 @@ function matchesStatusFilter(item, selectedStatusFilter) {
               </div>
               {item.address && (
                 <div className="w-full min-w-0 overflow-hidden">
-                  <ReadOnlyEventMap address={item.address} location={item.location || null} />
+                  <Suspense fallback={<div className="py-6 text-center text-sm text-gray-500">Loading map...</div>}>
+                    <ReadOnlyEventMap address={item.address} location={item.location || null} />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -2563,36 +1957,40 @@ function matchesStatusFilter(item, selectedStatusFilter) {
                       />
                     </div>
                   </div>
-                  <AssignMembersPicker
-                    allMembers={assignableMembers}
-                    selectedIds={formData.assignedMemberIds}
-                    onChange={nextIds => setFormData({ ...formData, assignedMemberIds: nextIds })}
-                    label="Committee member (Assigned)"
-                    placeholder="Search member"
-                  />
+                  <Suspense fallback={<div className="py-4 text-sm text-gray-500">Loading members...</div>}>
+                    <AssignMembersPicker
+                      allMembers={assignableMembers}
+                      selectedIds={formData.assignedMemberIds}
+                      onChange={nextIds => setFormData({ ...formData, assignedMemberIds: nextIds })}
+                      label="Committee member (Assigned)"
+                      placeholder="Search member"
+                    />
+                  </Suspense>
                 </div>
               </div>
 
               <div className="calendar-done-card relative isolate z-0 rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
                 <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-800">Location</h4>
-                <EventLocationPicker
-                  address={formData.address}
-                  location={formData.location}
-                  onAddressInput={value =>
-                    setFormData(prev => ({
-                      ...prev,
-                      address: value,
-                      location: null,
-                    }))
-                  }
-                  onLocationSelect={({ address, location }) =>
-                    setFormData(prev => ({
-                      ...prev,
-                      address,
-                      location,
-                    }))
-                  }
-                />
+                <Suspense fallback={<div className="py-4 text-sm text-gray-500">Loading location...</div>}>
+                  <EventLocationPicker
+                    address={formData.address}
+                    location={formData.location}
+                    onAddressInput={value =>
+                      setFormData(prev => ({
+                        ...prev,
+                        address: value,
+                        location: null,
+                      }))
+                    }
+                    onLocationSelect={({ address, location }) =>
+                      setFormData(prev => ({
+                        ...prev,
+                        address,
+                        location,
+                      }))
+                    }
+                  />
+                </Suspense>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -2657,7 +2055,9 @@ function matchesStatusFilter(item, selectedStatusFilter) {
                 <p className="text-sm font-semibold text-gray-800">Location</p>
                 <p className="text-sm text-gray-700">{markDoneEvent.address || 'No address provided'}</p>
                 {markDoneEvent.location ? (
-                  <ReadOnlyEventMap address={markDoneEvent.address} location={markDoneEvent.location} />
+                  <Suspense fallback={<div className="py-6 text-center text-sm text-gray-500">Loading map...</div>}>
+                    <ReadOnlyEventMap address={markDoneEvent.address} location={markDoneEvent.location} />
+                  </Suspense>
                 ) : null}
               </div>
 
@@ -3748,7 +3148,11 @@ function matchesStatusFilter(item, selectedStatusFilter) {
                               </div>
                             )}
                           </div>
-                          {item.address && <ReadOnlyEventMap address={item.address} location={item.location || null} />}
+                          {item.address && (
+                            <Suspense fallback={<div className="py-6 text-center text-sm text-gray-500">Loading map...</div>}>
+                              <ReadOnlyEventMap address={item.address} location={item.location || null} />
+                            </Suspense>
+                          )}
                         </div>
                       </div>
                     )}
@@ -3861,13 +3265,15 @@ function matchesStatusFilter(item, selectedStatusFilter) {
                       />
                     </div>
                   </div>
-	                  <AssignMembersPicker
-	                    allMembers={assignableMembers}
-	                    selectedIds={formData.assignedMemberIds}
-	                    onChange={nextIds => setFormData({ ...formData, assignedMemberIds: nextIds })}
-	                    label="Committee member (Assigned)"
-	                    placeholder="Search member"
-	                  />
+ 	                  <Suspense fallback={<div className="py-4 text-sm text-gray-500">Loading members...</div>}>
+ 	                    <AssignMembersPicker
+ 	                      allMembers={assignableMembers}
+ 	                      selectedIds={formData.assignedMemberIds}
+ 	                      onChange={nextIds => setFormData({ ...formData, assignedMemberIds: nextIds })}
+ 	                      label="Committee member (Assigned)"
+ 	                      placeholder="Search member"
+ 	                    />
+ 	                  </Suspense>
 
 	                </div>
 	              </div>

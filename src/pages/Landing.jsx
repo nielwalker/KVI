@@ -309,12 +309,12 @@ function NavBar({ navigate }) {
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-15 absolute left-1/2 -translate-x-1/2">
+        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2 whitespace-nowrap overflow-x-auto max-w-[calc(100vw-4rem)]">
           {NAV_LINKS.map(link => (
             <a
               key={link.label}
               href={link.href}
-              className="text-base font-bold text-white-400 hover:text-white transition-colors duration-200 relative group"
+              className="text-base font-bold text-white-400 hover:text-white transition-colors duration-200 relative group whitespace-nowrap"
             >
               {link.label}
               <span className="absolute -bottom-0.5 left-0 w-0 h-px bg-yellow-400 group-hover:w-full transition-all duration-300 rounded-full" />
@@ -322,7 +322,7 @@ function NavBar({ navigate }) {
           ))}
 
           <div
-            className="relative flex items-center"
+            className="relative flex items-center whitespace-nowrap"
             ref={managementMenuRef}
             onMouseEnter={() => setManagementOpen(true)}
             onMouseLeave={() => setManagementOpen(false)}
@@ -330,7 +330,7 @@ function NavBar({ navigate }) {
             <button
               type="button"
               onClick={() => setManagementOpen(true)}
-              className={`group relative inline-flex items-center gap-1 text-base font-bold transition-colors duration-200 ${
+              className={`group relative inline-flex items-center gap-1 text-base font-bold transition-colors duration-200 whitespace-nowrap ${
                 managementOpen ? 'text-white' : 'text-white-400 hover:text-white'
               }`}
               aria-expanded={managementOpen}
@@ -388,7 +388,7 @@ function NavBar({ navigate }) {
           </div>
 
           <div
-            className="relative flex items-center"
+            className="relative flex items-center whitespace-nowrap"
             ref={whoWeAreMenuRef}
             onMouseEnter={() => setWhoWeAreOpen(true)}
             onMouseLeave={() => setWhoWeAreOpen(false)}
@@ -396,7 +396,7 @@ function NavBar({ navigate }) {
             <button
               type="button"
               onClick={() => setWhoWeAreOpen(true)}
-              className={`group relative inline-flex items-center gap-1 text-base font-bold transition-colors duration-200 ${
+              className={`group relative inline-flex items-center gap-1 text-base font-bold transition-colors duration-200 whitespace-nowrap ${
                 whoWeAreOpen ? 'text-white' : 'text-white-400 hover:text-white'
               }`}
               aria-expanded={whoWeAreOpen}
@@ -2375,7 +2375,7 @@ function Landing() {
           onClick={() => setSelectedNewsItem(null)}
         >
           <div
-            className="w-screen max-w-none overflow-hidden rounded-2xl border border-slate-200 bg-white text-left text-slate-900 sm:w-[calc(100vw-2rem)]"
+            className="w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white text-left text-slate-900 sm:max-w-4xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="relative border-b border-slate-200 p-6">

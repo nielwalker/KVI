@@ -1,5 +1,6 @@
 /* global Buffer, process */
 import { defineConfig, loadEnv } from 'vite'
+import path from 'path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import bootstrapHandler from './api/admin/bootstrap.js'
@@ -97,5 +98,40 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react({ fastRefresh: !disableFastRefresh }), tailwindcss(), devApiPlugin()],
+    build: {
+      chunkSizeWarningLimit: 600,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              try {
+                const nm = id.split(`node_modules${path.sep}`)[1]
+                const parts = nm.split(path.sep)
+                let pkg = parts[0]
+                if (pkg && pkg.startsWith('@')) {
+                  pkg = `${pkg}/${parts[1]}`
+                }
+                // common large packages we want isolated
+                if (pkg === 'react' || pkg === 'react-dom') return 'vendor-react'
+                if (pkg === 'lucide-react') return 'vendor-lucide'
+                if (pkg.startsWith('@supabase')) return 'vendor-supabase'
+                if (pkg === 'dayjs') return 'vendor-dayjs'
+                // normalize package name for chunk file
+                const sanitized = pkg.replace('@', '').replace('/', '-')
+                return `vendor-${sanitized}`
+              } catch (e) {
+                return 'vendor'
+              }
+            }
+            const pagesPath = path.resolve(__dirname, 'src', 'pages')
+            if (id.startsWith(pagesPath)) {
+              const parts = id.split(path.sep)
+              const name = parts[parts.length - 1].replace(/\.jsx?$/, '')
+              return `page-${name}`
+            }
+          },
+        },
+      },
+    },
   }
 })

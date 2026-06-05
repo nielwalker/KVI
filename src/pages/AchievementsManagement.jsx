@@ -834,7 +834,7 @@ export default function AchievementsManagement() {
           onClick={() => setExpandedId(null)}
         >
           <div
-            className="calendar-done-modal w-screen max-w-4xl overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
+            className="calendar-done-modal w-full max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.18)]"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="calendar-done-modal-header flex items-start justify-between gap-4 border-b border-gray-200 bg-white p-5 sm:p-6">

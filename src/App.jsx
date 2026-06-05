@@ -1,31 +1,34 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import React, { Suspense, lazy } from 'react'
 import Layout from './layout/Layout'
-import Dashboard from './pages/Dashboard'
-import Calendar from './pages/Calendar'
-import Attendance from './pages/Attendance'
-import AttendanceManagement from './pages/AttendanceManagement'
-import Profile from './pages/Profile'
-import ChangePassword from './pages/ChangePassword'
-import EditAccount from './pages/EditAccount'
-import Members from './pages/Members'
-import CreateMember from './pages/CreateMember'
-import MemberDetail from './pages/MemberDetail'
-import Donations from './pages/Donations'
-import Report from './pages/Report'
-import AchievementsManagement from './pages/AchievementsManagement'
-import Login from './pages/Login'
-import Landing from './pages/Landing'
-import NewsArticle from './pages/NewsArticle'
-import Recruitment from './pages/Recruitment'
-import OrganizationStructure from './pages/OrganizationStructure'
-import WhoWeAre from './pages/WhoWeAre'
-import Settings from './pages/Settings'
-import CategoryManagement from './pages/CategoryManagement'
-import CommitteeManagement from './pages/CommitteeManagement'
 import ChatbotWidget from './components/ChatbotWidget'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ConfirmProvider } from './context/ConfirmProvider'
 import './index.css'
+
+// Lazy-loaded pages to enable code-splitting
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Calendar = lazy(() => import('./pages/Calendar'))
+const Attendance = lazy(() => import('./pages/Attendance'))
+const AttendanceManagement = lazy(() => import('./pages/AttendanceManagement'))
+const Profile = lazy(() => import('./pages/Profile'))
+const ChangePassword = lazy(() => import('./pages/ChangePassword'))
+const EditAccount = lazy(() => import('./pages/EditAccount'))
+const Members = lazy(() => import('./pages/Members'))
+const CreateMember = lazy(() => import('./pages/CreateMember'))
+const MemberDetail = lazy(() => import('./pages/MemberDetail'))
+const Donations = lazy(() => import('./pages/Donations'))
+const Report = lazy(() => import('./pages/Report'))
+const AchievementsManagement = lazy(() => import('./pages/AchievementsManagement'))
+const Login = lazy(() => import('./pages/Login'))
+const Landing = lazy(() => import('./pages/Landing'))
+const NewsArticle = lazy(() => import('./pages/NewsArticle'))
+const Recruitment = lazy(() => import('./pages/Recruitment'))
+const OrganizationStructure = lazy(() => import('./pages/OrganizationStructure'))
+const WhoWeAre = lazy(() => import('./pages/WhoWeAre'))
+const Settings = lazy(() => import('./pages/Settings'))
+const CategoryManagement = lazy(() => import('./pages/CategoryManagement'))
+const CommitteeManagement = lazy(() => import('./pages/CommitteeManagement'))
 
 function AuthPendingState({ title = 'Loading your session...' }) {
   return (
@@ -130,7 +133,8 @@ function ChatbotGate() {
 
 function AppRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading…</div>}>
+      <Routes>
       {/* Public Routes */}
       <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
       <Route path="/landing" element={<Navigate to="/" replace />} />
@@ -167,7 +171,8 @@ function AppRoutes() {
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   )
 }
 
