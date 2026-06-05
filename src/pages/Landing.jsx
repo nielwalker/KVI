@@ -276,7 +276,7 @@ function NavBar({ navigate }) {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      className={`fixed top-0 left-0 right-0 z-50 overflow-visible transition-all duration-500 ${
         scrolled
           ? 'shadow-2xl shadow-black/60'
           : ''
@@ -309,7 +309,7 @@ function NavBar({ navigate }) {
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2 whitespace-nowrap overflow-x-auto max-w-[calc(100vw-4rem)]">
+        <nav className="hidden md:flex items-center gap-10 absolute left-1/2 -translate-x-1/2 whitespace-nowrap overflow-visible">
           {NAV_LINKS.map(link => (
             <a
               key={link.label}
@@ -322,7 +322,7 @@ function NavBar({ navigate }) {
           ))}
 
           <div
-            className="relative flex items-center whitespace-nowrap"
+            className="relative flex items-center whitespace-nowrap overflow-visible"
             ref={managementMenuRef}
             onMouseEnter={() => setManagementOpen(true)}
             onMouseLeave={() => setManagementOpen(false)}
@@ -348,7 +348,7 @@ function NavBar({ navigate }) {
                   className="absolute left-1/2 top-full z-40 h-4 w-72 -translate-x-1/2"
                 />
               <div
-                className="absolute left-1/2 top-full z-50 mt-4 w-72 -translate-x-1/2 rounded-2xl border p-2"
+                className="absolute left-1/2 top-full z-60 mt-2 w-72 -translate-x-1/2 overflow-visible rounded-2xl border p-2"
                 role="menu"
                 style={{
                   background: '#ffffff',
@@ -388,7 +388,7 @@ function NavBar({ navigate }) {
           </div>
 
           <div
-            className="relative flex items-center whitespace-nowrap"
+            className="relative flex items-center whitespace-nowrap overflow-visible"
             ref={whoWeAreMenuRef}
             onMouseEnter={() => setWhoWeAreOpen(true)}
             onMouseLeave={() => setWhoWeAreOpen(false)}
@@ -414,7 +414,7 @@ function NavBar({ navigate }) {
                   className="absolute left-1/2 top-full z-40 h-4 w-80 -translate-x-1/2"
                 />
                 <div
-                  className="absolute left-1/2 top-full z-50 mt-4 w-80 -translate-x-1/2 rounded-2xl border p-2"
+                  className="absolute left-1/2 top-full z-60 mt-2 w-80 -translate-x-1/2 overflow-visible rounded-2xl border p-2"
                   role="menu"
                   style={{
                     background: '#ffffff',
