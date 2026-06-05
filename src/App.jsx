@@ -69,7 +69,7 @@ function ProtectedRoute({ children }) {
   if (user && loading) return <AuthPendingState title="Loading your data..." />
 
   if (!user) {
-    return <Navigate to="/landing" replace />
+    return <Navigate to="/" replace />
   }
 
   return children
@@ -83,11 +83,11 @@ function AdminRoute({ children }) {
   if (user && loading) return <AuthPendingState title="Loading your data..." />
 
   if (!user) {
-    return <Navigate to="/landing" replace />
+    return <Navigate to="/" replace />
   }
 
   if (user.role !== 'admin') {
-    return <Navigate to="/" replace />
+    return <Navigate to="/app" replace />
   }
 
   return children
@@ -101,11 +101,11 @@ function MemberRoute({ children }) {
   if (user && loading) return <AuthPendingState title="Loading your data..." />
 
   if (!user) {
-    return <Navigate to="/landing" replace />
+    return <Navigate to="/" replace />
   }
 
   if (user.role === 'admin') {
-    return <Navigate to="/attendance-management" replace />
+    return <Navigate to="/app/attendance-management" replace />
   }
 
   return children
@@ -132,7 +132,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/landing" element={<PublicRoute><Landing /></PublicRoute>} />
+      <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
+      <Route path="/landing" element={<Navigate to="/" replace />} />
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/recruitment" element={<PublicRoute><Recruitment /></PublicRoute>} />
       <Route path="/news/:id" element={<NewsArticle />} />
@@ -144,7 +145,7 @@ function AppRoutes() {
       <Route path="/who-we-are/news" element={<WhoWeAre mode="news" />} />
 
       {/* Protected Routes */}
-      <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+      <Route path="/app" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Dashboard />} />
         <Route path="calendar" element={<Calendar />} />
         <Route path="attendance" element={<MemberRoute><Attendance /></MemberRoute>} />

@@ -576,7 +576,7 @@ function Attendance() {
                 type="button"
                 key={`${event.id || 'event'}-${index}`}
                 onClick={() =>
-                  navigate('/calendar', {
+                  navigate('/app/calendar', {
                     state: {
                       focusEventId: event.id,
                       focusEventKey: getEventMatchKey(event),

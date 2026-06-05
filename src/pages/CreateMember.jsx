@@ -227,7 +227,7 @@ export default function CreateMember({ recruitmentId: recruitmentIdProp, onClose
             onClick={() => {
               if (typeof onClose === 'function') onClose()
               else if (window.history.length > 1) navigate(-1)
-              else navigate('/members')
+              else navigate('/app/members')
             }}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
           >

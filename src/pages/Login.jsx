@@ -44,7 +44,7 @@ function Login() {
     } catch {
       // ignore
     }
-    navigate('/', { replace: true })
+    navigate('/app', { replace: true })
   }, [authResolved, loading, navigate, user])
 
   useEffect(() => {
@@ -243,7 +243,7 @@ function Login() {
           <div className="flex flex-wrap items-center justify-between gap-2 mb-5">
             <button
               type="button"
-              onClick={() => navigate('/landing')}
+              onClick={() => navigate('/')}
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-3 py-1.5 text-xs font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
             >
               <ArrowLeft size={14} />

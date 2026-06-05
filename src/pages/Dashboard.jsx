@@ -611,7 +611,7 @@ function Dashboard() {
   }, [events])
 
   const handleOpenEventInCalendar = event => {
-    navigate('/calendar', {
+    navigate('/app/calendar', {
       state: {
         focusEventId: event.id,
         focusEventKey: getEventMatchKey(event),
@@ -645,7 +645,7 @@ function Dashboard() {
   const handleOpenNotification = notification => {
     if (!notification) return
     markNotificationRead(notification.id)
-    navigate('/calendar', {
+    navigate('/app/calendar', {
       state: {
         focusEventId: notification.eventId,
         forceFocusEvent: true,
@@ -804,7 +804,7 @@ function Dashboard() {
               <button
                 type="button"
                 onClick={() =>
-                  navigate('/calendar', {
+                  navigate('/app/calendar', {
                     state: { openCreateEventForm: true },
                   })
                 }
@@ -866,7 +866,7 @@ function Dashboard() {
             {isAdmin && (
               <button
                 type="button"
-                onClick={() => navigate('/calendar')}
+                onClick={() => navigate('/app/calendar')}
                 className="cursor-pointer rounded-lg border border-slate-200 bg-[#ffffff] px-4 py-2 text-[14px] font-medium text-slate-700 transition-all duration-200 hover:scale-[1.02] hover:bg-[#ffffff] hover:border-slate-300 hover:shadow-sm"
               >
                 {t('View All')}

@@ -153,7 +153,7 @@ export default function NewsArticle() {
         <div className="relative mx-auto max-w-[92rem] px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[112rem]">
           <button
             type="button"
-            onClick={() => navigate('/landing')}
+            onClick={() => navigate('/')}
             className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 shadow-[0_10px_24px_rgba(250,204,21,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
           >
             <ArrowLeft size={16} />

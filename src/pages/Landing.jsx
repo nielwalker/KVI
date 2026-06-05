@@ -293,7 +293,7 @@ function NavBar({ navigate }) {
         {/* Logo */}
         <button
           type="button"
-          onClick={() => navigate('/landing')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-3 group"
         >
           <div

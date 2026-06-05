@@ -1405,7 +1405,7 @@ const getFieldValue = (event, key, fallbackKeys = []) => {
                                       <button
                                         type="button"
                                         onClick={() =>
-                                          navigate('/calendar', {
+                                          navigate('/app/calendar', {
                                             state: {
                                               focusEventId: event.id,
                                               focusEventKey: getEventMatchKey(event),

@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext'
 
 const PAGE_SUGGESTIONS = [
   {
-    match: ({ pathname, hash }) => pathname.startsWith('/landing') && hash === '#services',
+    match: ({ pathname, hash }) => pathname === '/' && hash === '#services',
     title: 'Programs',
     suggestions: [
       'What services does KVI offer?',
@@ -13,9 +13,9 @@ const PAGE_SUGGESTIONS = [
       'How do I go back to Home?',
     ],
     links: [
-      { label: 'Programs', to: '/landing#services' },
-      { label: 'Home', to: '/landing' },
-      { label: 'About', to: '/landing#about' },
+      { label: 'Programs', to: '/#services' },
+      { label: 'Home', to: '/' },
+      { label: 'About', to: '/#about' },
     ],
   },
   {
@@ -29,11 +29,11 @@ const PAGE_SUGGESTIONS = [
     links: [
       { label: 'Board Structure', to: '/organization/board' },
       { label: 'KUSGAN Committee', to: '/organization/kusgan' },
-      { label: 'Home', to: '/landing' },
+      { label: 'Home', to: '/' },
     ],
   },
   {
-    match: ({ pathname, hash }) => pathname.startsWith('/landing') && hash === '#about',
+    match: ({ pathname, hash }) => pathname === '/' && hash === '#about',
     title: 'About KUSGAN',
     suggestions: [
       'Where can I read the Mission and Vision?',
@@ -41,14 +41,14 @@ const PAGE_SUGGESTIONS = [
       'How do I find Contact Details?',
     ],
     links: [
-      { label: 'About', to: '/landing#about' },
-      { label: 'Home', to: '/landing' },
-      { label: 'Programs', to: '/landing#services' },
+      { label: 'About', to: '/#about' },
+      { label: 'Home', to: '/' },
+      { label: 'Programs', to: '/#services' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/landing'),
-    title: 'Landing Page',
+    match: ({ pathname }) => pathname === '/',
+    title: 'Home',
     suggestions: [
       'Where can I log in?',
       'How do I apply for recruitment?',
@@ -57,11 +57,11 @@ const PAGE_SUGGESTIONS = [
     links: [
       { label: 'Login', to: '/login' },
       { label: 'Recruitment', to: '/recruitment' },
-      { label: 'Home', to: '/landing' },
+      { label: 'Home', to: '/' },
     ],
   },
   {
-    match: ({ pathname }) => pathname === '/',
+    match: ({ pathname }) => pathname.startsWith('/app'),
     title: 'Dashboard',
     suggestions: [
       'Where can I see recent activities?',
@@ -81,22 +81,22 @@ const PAGE_SUGGESTIONS = [
       ],
     },
     links: [
-      { label: 'Dashboard', to: '/' },
-      { label: 'Calendar', to: '/calendar' },
-      { label: 'Reports', to: '/report' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Dashboard', to: '/app' },
+      { label: 'Calendar', to: '/app/calendar' },
+      { label: 'Reports', to: '/app/report' },
+      { label: 'Profile', to: '/app/profile' },
     ],
     linksByRole: {
       member: [
-        { label: 'Dashboard', to: '/' },
-        { label: 'Calendar', to: '/calendar' },
-        { label: 'Attendance', to: '/attendance' },
-        { label: 'Profile', to: '/profile' },
+        { label: 'Dashboard', to: '/app' },
+        { label: 'Calendar', to: '/app/calendar' },
+        { label: 'Attendance', to: '/app/attendance' },
+        { label: 'Profile', to: '/app/profile' },
       ],
     },
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/calendar'),
+    match: ({ pathname }) => pathname.startsWith('/app/calendar'),
     title: 'Calendar & Events',
     suggestions: [
       'How do I create an event?',
@@ -104,12 +104,12 @@ const PAGE_SUGGESTIONS = [
       'How do I filter by category?',
     ],
     links: [
-      { label: 'Create Event', to: '/calendar', state: { openCreateEventForm: true } },
-      { label: 'Event List', to: '/events' },
+      { label: 'Create Event', to: '/app/calendar', state: { openCreateEventForm: true } },
+      { label: 'Event List', to: '/app/events' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/events'),
+    match: ({ pathname }) => pathname.startsWith('/app/events'),
     title: 'Event List',
     suggestions: [
       'How do I filter by category?',
@@ -117,13 +117,13 @@ const PAGE_SUGGESTIONS = [
       'How do I create a new event?',
     ],
     links: [
-      { label: 'Create Event', to: '/calendar', state: { openCreateEventForm: true } },
-      { label: 'Calendar', to: '/calendar' },
-      { label: 'Dashboard', to: '/' },
+      { label: 'Create Event', to: '/app/calendar', state: { openCreateEventForm: true } },
+      { label: 'Calendar', to: '/app/calendar' },
+      { label: 'Dashboard', to: '/app' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/attendance-management'),
+    match: ({ pathname }) => pathname.startsWith('/app/attendance-management'),
     title: 'Attendance Management',
     suggestions: [
       'How do I mark attendance for today?',
@@ -131,13 +131,13 @@ const PAGE_SUGGESTIONS = [
       'Where can I see attendance history?',
     ],
     links: [
-      { label: 'Attendance Mgmt', to: '/attendance-management' },
-      { label: 'Dashboard', to: '/' },
+      { label: 'Attendance Mgmt', to: '/app/attendance-management' },
+      { label: 'Dashboard', to: '/app' },
     ],
     roles: ['admin'],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/attendance'),
+    match: ({ pathname }) => pathname.startsWith('/app/attendance'),
     title: 'Attendance',
     suggestions: [
       'How do I time in for today?',
@@ -145,12 +145,12 @@ const PAGE_SUGGESTIONS = [
       'Can admin edit my attendance?',
     ],
     links: [
-      { label: 'Attendance', to: '/attendance' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Attendance', to: '/app/attendance' },
+      { label: 'Profile', to: '/app/profile' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/report'),
+    match: ({ pathname }) => pathname.startsWith('/app/report'),
     title: 'Reports',
     suggestions: [
       'How do I export a report?',
@@ -158,13 +158,13 @@ const PAGE_SUGGESTIONS = [
       'Are reports grouped by event type?',
     ],
     links: [
-      { label: 'Reports', to: '/report' },
-      { label: 'Dashboard', to: '/' },
+      { label: 'Reports', to: '/app/report' },
+      { label: 'Dashboard', to: '/app' },
     ],
     roles: ['admin'],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/category-management'),
+    match: ({ pathname }) => pathname.startsWith('/app/category-management'),
     title: 'Category Management',
     suggestions: [
       'How do I add a new category?',
@@ -172,14 +172,14 @@ const PAGE_SUGGESTIONS = [
       'How do I edit a category?',
     ],
     links: [
-      { label: 'Categories', to: '/category-management' },
-      { label: 'Members', to: '/members' },
-      { label: 'Calendar', to: '/calendar' },
+      { label: 'Categories', to: '/app/category-management' },
+      { label: 'Members', to: '/app/members' },
+      { label: 'Calendar', to: '/app/calendar' },
     ],
     roles: ['admin'],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/members'),
+    match: ({ pathname }) => pathname.startsWith('/app/members'),
     title: 'Members',
     suggestions: [
       'How do I create a member account?',
@@ -187,13 +187,13 @@ const PAGE_SUGGESTIONS = [
       'How do I delete members?',
     ],
     links: [
-      { label: 'Members', to: '/members' },
-      { label: 'Categories', to: '/category-management' },
+      { label: 'Members', to: '/app/members' },
+      { label: 'Categories', to: '/app/category-management' },
     ],
     roles: ['admin'],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/settings'),
+    match: ({ pathname }) => pathname.startsWith('/app/settings'),
     title: 'Settings',
     suggestions: [
       'How do I change the theme?',
@@ -201,12 +201,12 @@ const PAGE_SUGGESTIONS = [
       'How do I update notifications?',
     ],
     links: [
-      { label: 'Settings', to: '/settings' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Settings', to: '/app/settings' },
+      { label: 'Profile', to: '/app/profile' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/profile'),
+    match: ({ pathname }) => pathname.startsWith('/app/profile'),
     title: 'Profile',
     suggestions: [
       'How do I update my profile info?',
@@ -214,13 +214,13 @@ const PAGE_SUGGESTIONS = [
       'How do I upload a new avatar?',
     ],
     links: [
-      { label: 'Edit Profile', to: '/account/edit' },
-      { label: 'Change Password', to: '/change-password' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Edit Profile', to: '/app/account/edit' },
+      { label: 'Change Password', to: '/app/change-password' },
+      { label: 'Profile', to: '/app/profile' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/account/edit'),
+    match: ({ pathname }) => pathname.startsWith('/app/account/edit'),
     title: 'Edit Profile',
     suggestions: [
       'How do I update my name and contact info?',
@@ -228,12 +228,12 @@ const PAGE_SUGGESTIONS = [
       'How do I upload a profile image?',
     ],
     links: [
-      { label: 'Edit Profile', to: '/account/edit' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Edit Profile', to: '/app/account/edit' },
+      { label: 'Profile', to: '/app/profile' },
     ],
   },
   {
-    match: ({ pathname }) => pathname.startsWith('/change-password'),
+    match: ({ pathname }) => pathname.startsWith('/app/change-password'),
     title: 'Change Password',
     suggestions: [
       'What do I need to change my password?',
@@ -241,8 +241,8 @@ const PAGE_SUGGESTIONS = [
       'Where do I go after changing it?',
     ],
     links: [
-      { label: 'Change Password', to: '/change-password' },
-      { label: 'Profile', to: '/profile' },
+      { label: 'Change Password', to: '/app/change-password' },
+      { label: 'Profile', to: '/app/profile' },
     ],
   },
   {
@@ -281,10 +281,10 @@ const DEFAULT_SUGGESTIONS = {
     'Where can I see the calendar?',
   ],
   links: [
-    { label: 'Home', to: '/landing' },
-    { label: 'Calendar', to: '/calendar' },
+    { label: 'Home', to: '/' },
+    { label: 'Calendar', to: '/app/calendar' },
     { label: 'Recruitment', to: '/recruitment' },
-    { label: 'Profile', to: '/profile' },
+    { label: 'Profile', to: '/app/profile' },
   ],
 }
 
@@ -503,20 +503,20 @@ const buildResponse = (input, role) => {
   }
   if (text.includes('services') || text.includes('partners')) {
     return response([
-      'Go to Landing and open the Services section.',
+      'Go to Home and open the Services section.',
       'You will see KVI services and the partner organizations at the top.',
     ])
   }
   if (text.includes('structure') || text.includes('board') || text.includes('organization')) {
     return response([
-      'Go to Landing and open the Management dropdown in the header.',
+      'Go to Home and open the Management dropdown in the header.',
       'Click Board Organizational Structure to open the board page.',
       'Click KUSGAN Committee to open the committee page.',
     ])
   }
   if (text.includes('about') || text.includes('mission') || text.includes('vision') || text.includes('values') || text.includes('contact')) {
     return response([
-      'Go to Landing and open the About section.',
+      'Go to Home and open the About section.',
       'You can see the Mission, Vision, Core Values, and Contact Details there.',
     ])
   }
@@ -645,10 +645,10 @@ function ChatbotWidget() {
     if (role === 'admin') return baseLinks
     // Hide admin-only destinations for members and guests.
     const adminOnly = new Set([
-      '/attendance-management',
-      '/report',
-      '/category-management',
-      '/members',
+      '/app/attendance-management',
+      '/app/report',
+      '/app/category-management',
+      '/app/members',
     ])
     return baseLinks.filter(link => !adminOnly.has(link.to))
   }, [pageConfig.links, pageConfig.linksByRole, role])

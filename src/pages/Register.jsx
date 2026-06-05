@@ -47,7 +47,7 @@ function Register() {
     const result = await register(name, email, idNumber, password)
     if (result.success) {
       if (result.user) {
-        navigate('/')
+        navigate('/app')
       } else {
         navigate('/login', { state: { message: result.message || 'Registration successful. Please check your email to confirm your account.' } })
       }

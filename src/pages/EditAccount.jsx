@@ -167,7 +167,7 @@ function EditAccount() {
         return
       }
       setSuccess(res.message || 'Account information updated successfully.')
-      setTimeout(() => navigate('/profile'), 350)
+      setTimeout(() => navigate('/app/profile'), 350)
     } finally {
       setIsSaving(false)
     }
@@ -425,7 +425,7 @@ function EditAccount() {
 
             <div className="flex justify-end gap-2 mt-6">
               <button
-                onClick={() => navigate('/profile')}
+                onClick={() => navigate('/app/profile')}
                 className="px-4 py-2.5 bg-[black] text-[white] rounded-lg hover:bg-zinc-300  transition-colors font-medium"
               >
                 Cancel

@@ -14,18 +14,18 @@ function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(getInitialSidebarOpen)
   const location = useLocation()
   const dashboardThemeRoutes = [
-    '/',
-    '/calendar',
-    '/attendance-management',
-    '/report',
-    '/achievements',
-    '/donations',
-    '/members',
-    '/profile',
-    '/account/edit',
-    '/change-password',
-    '/category-management',
-    '/committee-management',
+    '/app',
+    '/app/calendar',
+    '/app/attendance-management',
+    '/app/report',
+    '/app/achievements',
+    '/app/donations',
+    '/app/members',
+    '/app/profile',
+    '/app/account/edit',
+    '/app/change-password',
+    '/app/category-management',
+    '/app/committee-management',
   ]
   const isDashboardThemeRoute = dashboardThemeRoutes.some(route => {
     if (route === '/') return location.pathname === '/'

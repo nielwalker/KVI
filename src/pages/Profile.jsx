@@ -200,7 +200,7 @@ function Profile() {
                     role="menuitem"
                     onClick={() => {
                       closeMenu({ restoreFocus: false })
-                      navigate('/account/edit')
+                      navigate('/app/account/edit')
                     }}
                     className="flex w-full items-center justify-between rounded-xl border border-yellow-300 bg-yellow-400 px-3.5 py-3 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
                     style={{ colorScheme: 'light', boxShadow: 'none' }}
@@ -212,7 +212,7 @@ function Profile() {
                     role="menuitem"
                     onClick={() => {
                       closeMenu({ restoreFocus: false })
-                      navigate('/change-password')
+                      navigate('/app/change-password')
                     }}
                     className="mt-2 flex w-full items-center justify-between rounded-xl border border-yellow-300 bg-yellow-400 px-3.5 py-3 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
                     style={{ colorScheme: 'light', boxShadow: 'none' }}

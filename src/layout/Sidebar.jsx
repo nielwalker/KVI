@@ -25,7 +25,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
   const avatarTone = 'bg-white logo-no-dark ring-2 ring-yellow-400/30'
   const footerBorderTone = 'border-l border-white/10'
   const footerButtonBorderTone = 'border-white/15'
-  const managementRoutes = ['/members', '/achievements', '/category-management', '/committee-management']
+  const managementRoutes = ['/app/members', '/app/achievements', '/app/category-management', '/app/committee-management']
   const isOnManagementRoute = managementRoutes.some(route => location.pathname.startsWith(route))
   const resolvedManagementOpen = managementOpen ?? isOnManagementRoute
   const getNavLabelClass = (label) => {
@@ -37,12 +37,12 @@ function Sidebar({ isOpen, toggleSidebar }) {
   }
 
   const navItems = [
-    { to: '/', icon: LayoutDashboard, label: t('Dashboard') },
-    { to: '/calendar', icon: Calendar, label: t('Calendar') },
-    ...(!isAdmin ? [{ to: '/attendance', icon: ClipboardCheck, label: 'Attendance' }] : []),
-    ...(isAdmin ? [{ to: '/attendance-management', icon: ClipboardCheck, label: 'Attendance Management' }] : []),
-    ...(isAdmin ? [{ to: '/report', icon: FileText, label: t('Report') }] : []),
-    ...(isAdmin ? [{ to: '/donations', icon: HandHeart, label: t('Donations') }] : []),
+    { to: '/app', icon: LayoutDashboard, label: t('Dashboard') },
+    { to: '/app/calendar', icon: Calendar, label: t('Calendar') },
+    ...(!isAdmin ? [{ to: '/app/attendance', icon: ClipboardCheck, label: 'Attendance' }] : []),
+    ...(isAdmin ? [{ to: '/app/attendance-management', icon: ClipboardCheck, label: 'Attendance Management' }] : []),
+    ...(isAdmin ? [{ to: '/app/report', icon: FileText, label: t('Report') }] : []),
+    ...(isAdmin ? [{ to: '/app/donations', icon: HandHeart, label: t('Donations') }] : []),
   ]
 
   const handleLogout = async () => {
@@ -55,7 +55,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
     })
     if (!ok) return
     await logout()
-    navigate('/landing', { replace: true })
+    navigate('/', { replace: true })
   }
 
   return (
@@ -93,7 +93,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
                 <button
                   type="button"
                   onClick={() => {
-                    navigate('/profile')
+                    navigate('/app/profile')
                   }}
                   className={`w-20 h-20 rounded-full flex items-center justify-center overflow-hidden transition-colors ${avatarTone} ${utilityBtnTone}`}
                   aria-label={t('Profile')}
@@ -125,7 +125,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
             <button
               type="button"
               onClick={() => {
-                navigate('/profile')
+                navigate('/app/profile')
               }}
               className={`w-full flex items-center justify-center p-2 rounded-lg transition-colors ${utilityBtnTone}`}
             >
@@ -188,7 +188,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
                   }`}
                 >
                   <NavLink
-                    to="/members"
+                    to="/app/members"
                     className={({ isActive }) =>
                       `group relative flex min-h-[40px] min-w-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${navTone} ${
                         isActive ? navActiveTone : 'border-l-2 border-transparent'
@@ -202,7 +202,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
                   </NavLink>
 
                   <NavLink
-                    to="/achievements"
+                    to="/app/achievements"
                     className={({ isActive }) =>
                       `group relative flex min-w-0 items-center gap-3 rounded-lg px-4 py-2 text-sm transition-all duration-200 ${navTone} ${
                         isActive ? navActiveTone : 'border-l-2 border-transparent'
@@ -214,7 +214,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
                   </NavLink>
 
                   <NavLink
-                    to="/category-management"
+                    to="/app/category-management"
                     className={({ isActive }) =>
                       `group relative flex min-h-[40px] min-w-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${navTone} ${
                         isActive ? navActiveTone : 'border-l-2 border-transparent'
@@ -226,7 +226,7 @@ function Sidebar({ isOpen, toggleSidebar }) {
                   </NavLink>
 
                   <NavLink
-                    to="/committee-management"
+                    to="/app/committee-management"
                     className={({ isActive }) =>
                       `group relative flex min-h-[40px] min-w-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-all duration-200 ${navTone} ${
                         isActive ? navActiveTone : 'border-l-2 border-transparent'

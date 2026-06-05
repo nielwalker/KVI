@@ -113,7 +113,7 @@ function MemberDetail() {
       setActionError(result.message || 'Unable to delete member.')
       return
     }
-    navigate('/members')
+    navigate('/app/members')
   }
 
   const handleUpdateMember = async (e) => {
@@ -217,7 +217,7 @@ function MemberDetail() {
           <User size={48} className="mx-auto text-gray-300 mb-4" />
           <p className="text-gray-500 dark:text-zinc-400 text-lg">Member not found</p>
           <button
-            onClick={() => navigate('/members')}
+            onClick={() => navigate('/app/members')}
             className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
           >
             <ArrowLeft size={16} />
@@ -241,7 +241,7 @@ function MemberDetail() {
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <button
-          onClick={() => navigate('/members')}
+          onClick={() => navigate('/app/members')}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-yellow-300/30 bg-yellow-400 px-4 py-2 text-sm font-semibold text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-yellow-300"
         >
           <ArrowLeft size={16} />
