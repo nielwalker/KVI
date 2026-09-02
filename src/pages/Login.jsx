@@ -182,7 +182,7 @@ function Login() {
           }}
         >
           <img
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full bg-white object-cover"
             src="/kvi.png"
             alt="KUSGAN"
           />
