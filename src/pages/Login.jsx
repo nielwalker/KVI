@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { User, Lock, Eye, EyeOff, ArrowLeft, UserPlus } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -18,8 +18,6 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const [postLoginWaiting, setPostLoginWaiting] = useState(false)
   const [postLoginSlow, setPostLoginSlow] = useState(false)
-  const promoVideoRef = useRef(null)
-  const promoVideoRestartTimeoutRef = useRef(null)
   const { login, supabaseEnabled, supabaseConfigError, user, loading, authResolved } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -53,30 +51,6 @@ function Login() {
     const timeoutId = window.setTimeout(() => setPostLoginSlow(true), 12_000)
     return () => window.clearTimeout(timeoutId)
   }, [postLoginWaiting])
-
-  useEffect(() => {
-    return () => {
-      if (promoVideoRestartTimeoutRef.current) {
-        window.clearTimeout(promoVideoRestartTimeoutRef.current)
-        promoVideoRestartTimeoutRef.current = null
-      }
-    }
-  }, [])
-
-  const handlePromoVideoEnded = () => {
-    if (promoVideoRestartTimeoutRef.current) window.clearTimeout(promoVideoRestartTimeoutRef.current)
-
-    promoVideoRestartTimeoutRef.current = window.setTimeout(() => {
-      const el = promoVideoRef.current
-      if (!el) return
-      try {
-        el.currentTime = 0
-      } catch {
-        // ignore
-      }
-      void el.play?.().catch(() => {})
-    }, 1500)
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -207,14 +181,10 @@ function Login() {
             boxShadow: '0 24px 70px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.12)',
           }}
         >
-          <video
-            ref={promoVideoRef}
+          <img
             className="absolute inset-0 h-full w-full object-cover"
-            src="/kusgan-animation/kusgan%20animation.mp4"
-            autoPlay
-            muted
-            playsInline
-            onEnded={handlePromoVideoEnded}
+            src="/kvi.png"
+            alt="KUSGAN"
           />
         </aside>
 
